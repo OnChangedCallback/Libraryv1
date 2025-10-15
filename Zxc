@@ -1073,6 +1073,212 @@ function library:CreateWindow(properties)
 								return toggle
 							end
 							
+							-- AddSlider для секции
+							function section:AddSlider(properties)
+								properties = properties or {}
+								
+								local slider = {
+									name = properties.Name or "Slider",
+									flag = properties.Flag or properties.Name or "Slider",
+									min = properties.Min or 0,
+									max = properties.Max or 100,
+									default = properties.Default or 50,
+									decimals = properties.Decimals or 1,
+									suffix = properties.Suffix or "",
+									value = properties.Default or 50,
+									callback = properties.Callback or function() end,
+									dragging = false
+								}
+								
+								local sliderFrame, sliderText, sliderOutline, sliderBackground, sliderFill, sliderValue
+								
+								do -- // Slider UI
+									-- slider frame
+									sliderFrame = utility:create("Frame", {
+										Name = "Slider",
+										Parent = section.container,
+										BackgroundTransparency = 1,
+										BorderColor3 = fromRGB(0, 0, 0),
+										BorderSizePixel = 0,
+										Size = newUDim2(1, 0, 0, slider.name and 27 or 10),
+										ZIndex = 103
+									})
+									
+									-- slider text (название)
+									if slider.name then
+										sliderText = utility:create("TextLabel", {
+											Name = "Text",
+											Parent = sliderFrame,
+											BackgroundTransparency = 1,
+											BorderColor3 = fromRGB(0, 0, 0),
+											BorderSizePixel = 0,
+											Position = newUDim2(0, 1, 0, 0),
+											Size = newUDim2(1, -2, 0, 12),
+											FontFace = library.Font,
+											Text = slider.name,
+											TextColor3 = library.Theme["Text"],
+											TextSize = 12,
+											TextXAlignment = Enum.TextXAlignment.Left,
+											ZIndex = 104
+										})
+										
+										utility:create("UIStroke", {
+											Parent = sliderText,
+											Color = library.Theme["Text Border"],
+											Thickness = 1,
+											LineJoinMode = Enum.LineJoinMode.Miter
+										})
+									end
+									
+									-- slider outline (кнопка для драга)
+									sliderOutline = utility:create("TextButton", {
+										Name = "Outline",
+										Parent = sliderFrame,
+										BackgroundColor3 = library.Theme["Outline"],
+										BorderColor3 = fromRGB(0, 0, 0),
+										BorderSizePixel = 0,
+										Position = newUDim2(0, 4, 0, slider.name and 17 or 0),
+										Size = newUDim2(1, -8, 0, 10),
+										AutoButtonColor = false,
+										Text = "",
+										ZIndex = 104
+									})
+									
+									-- slider background
+									sliderBackground = utility:create("Frame", {
+										Name = "Background",
+										Parent = sliderOutline,
+										BackgroundColor3 = library.Theme["Element"],
+										BorderColor3 = fromRGB(0, 0, 0),
+										BorderSizePixel = 0,
+										Position = newUDim2(0, 1, 0, 1),
+										Size = newUDim2(1, -2, 1, -2),
+										ZIndex = 105
+									})
+									
+									-- background gradient
+									utility:create("UIGradient", {
+										Parent = sliderBackground,
+										Rotation = 90,
+										Color = newColorSequence({
+											newColorSequenceKeypoint(0, fromRGB(30, 30, 35)),
+											newColorSequenceKeypoint(1, fromRGB(23, 23, 28))
+										})
+									})
+									
+									-- slider fill (акцент)
+									sliderFill = utility:create("Frame", {
+										Name = "Fill",
+										Parent = sliderBackground,
+										BackgroundColor3 = library.Theme["Accent"],
+										BorderColor3 = fromRGB(0, 0, 0),
+										BorderSizePixel = 0,
+										Size = newUDim2(0.5, 0, 1, 0),
+										ZIndex = 106
+									})
+									
+									-- fill gradient
+									utility:create("UIGradient", {
+										Parent = sliderFill,
+										Rotation = 90,
+										Color = newColorSequence({
+											newColorSequenceKeypoint(0, fromRGB(255, 255, 255)),
+											newColorSequenceKeypoint(1, fromRGB(42, 42, 42))
+										})
+									})
+									
+									-- slider value text
+									sliderValue = utility:create("TextLabel", {
+										Name = "Value",
+										Parent = sliderFill,
+										BackgroundTransparency = 1,
+										BorderColor3 = fromRGB(0, 0, 0),
+										BorderSizePixel = 0,
+										AnchorPoint = newVector2(0.5, 0.5),
+										Position = newUDim2(1, 0, 0.5, 1),
+										Size = newUDim2(0, 50, 0, 12),
+										FontFace = library.Font,
+										Text = "50",
+										TextColor3 = fromRGB(235, 235, 235),
+										TextSize = 12,
+										ZIndex = 107
+									})
+									
+									utility:create("UIStroke", {
+										Parent = sliderValue,
+										Color = library.Theme["Text Border"],
+										Thickness = 1,
+										LineJoinMode = Enum.LineJoinMode.Miter
+									})
+									
+									-- index
+									slider.frame = sliderFrame
+									slider.text = sliderText
+									slider.outline = sliderOutline
+									slider.background = sliderBackground
+									slider.fill = sliderFill
+									slider.valueLabel = sliderValue
+								end
+								
+								do -- // Slider Functions
+									function slider:Set(value)
+										slider.value = clamp(floor(value / slider.decimals + 0.5) * slider.decimals, slider.min, slider.max)
+										library.flags[slider.flag] = slider.value
+										
+										-- update value text
+										slider.valueLabel.Text = tostring(slider.value) .. slider.suffix
+										
+										-- update fill size
+										local percentage = (slider.value - slider.min) / (slider.max - slider.min)
+										utility:tween(slider.fill, {Size = newUDim2(percentage, 0, 1, 0)}, 0.1)
+										
+										-- callback
+										slider.callback(slider.value)
+									end
+									
+									function slider:Get()
+										return slider.value
+									end
+								end
+								
+								-- dragging logic
+								sliderOutline.MouseButton1Down:Connect(function()
+									slider.dragging = true
+									
+									local function update()
+										local mousePos = uis:GetMouseLocation().X
+										local sliderPos = slider.outline.AbsolutePosition.X
+										local sliderSize = slider.outline.AbsoluteSize.X
+										local percentage = clamp((mousePos - sliderPos) / sliderSize, 0, 1)
+										local value = slider.min + (slider.max - slider.min) * percentage
+										slider:Set(value)
+									end
+									
+									update()
+									
+									local moveConnection
+									moveConnection = uis.InputChanged:Connect(function(input)
+										if input.UserInputType == Enum.UserInputType.MouseMovement and slider.dragging then
+											update()
+										end
+									end)
+									
+									local releaseConnection
+									releaseConnection = uis.InputEnded:Connect(function(input)
+										if input.UserInputType == Enum.UserInputType.MouseButton1 then
+											slider.dragging = false
+											moveConnection:Disconnect()
+											releaseConnection:Disconnect()
+										end
+									end)
+								end)
+								
+								-- set default
+								slider:Set(slider.default)
+								
+								return slider
+							end
+							
 							return section
 						end
 					end
@@ -1324,6 +1530,198 @@ function library:CreateWindow(properties)
 					return toggle
 				end
 				
+				-- AddSlider для секции (таб без подвкладок)
+				function section:AddSlider(properties)
+					properties = properties or {}
+					
+					local slider = {
+						name = properties.Name or "Slider",
+						flag = properties.Flag or properties.Name or "Slider",
+						min = properties.Min or 0,
+						max = properties.Max or 100,
+						default = properties.Default or 50,
+						decimals = properties.Decimals or 1,
+						suffix = properties.Suffix or "",
+						value = properties.Default or 50,
+						callback = properties.Callback or function() end,
+						dragging = false
+					}
+					
+					local sliderFrame, sliderText, sliderOutline, sliderBackground, sliderFill, sliderValue
+					
+					do -- // Slider UI
+						sliderFrame = utility:create("Frame", {
+							Name = "Slider",
+							Parent = section.container,
+							BackgroundTransparency = 1,
+							BorderColor3 = fromRGB(0, 0, 0),
+							BorderSizePixel = 0,
+							Size = newUDim2(1, 0, 0, slider.name and 27 or 10),
+							ZIndex = 103
+						})
+						
+						if slider.name then
+							sliderText = utility:create("TextLabel", {
+								Name = "Text",
+								Parent = sliderFrame,
+								BackgroundTransparency = 1,
+								BorderColor3 = fromRGB(0, 0, 0),
+								BorderSizePixel = 0,
+								Position = newUDim2(0, 1, 0, 0),
+								Size = newUDim2(1, -2, 0, 12),
+								FontFace = library.Font,
+								Text = slider.name,
+								TextColor3 = library.Theme["Text"],
+								TextSize = 12,
+								TextXAlignment = Enum.TextXAlignment.Left,
+								ZIndex = 104
+							})
+							
+							utility:create("UIStroke", {
+								Parent = sliderText,
+								Color = library.Theme["Text Border"],
+								Thickness = 1,
+								LineJoinMode = Enum.LineJoinMode.Miter
+							})
+						end
+						
+						sliderOutline = utility:create("TextButton", {
+							Name = "Outline",
+							Parent = sliderFrame,
+							BackgroundColor3 = library.Theme["Outline"],
+							BorderColor3 = fromRGB(0, 0, 0),
+							BorderSizePixel = 0,
+							Position = newUDim2(0, 4, 0, slider.name and 17 or 0),
+							Size = newUDim2(1, -8, 0, 10),
+							AutoButtonColor = false,
+							Text = "",
+							ZIndex = 104
+						})
+						
+						sliderBackground = utility:create("Frame", {
+							Name = "Background",
+							Parent = sliderOutline,
+							BackgroundColor3 = library.Theme["Element"],
+							BorderColor3 = fromRGB(0, 0, 0),
+							BorderSizePixel = 0,
+							Position = newUDim2(0, 1, 0, 1),
+							Size = newUDim2(1, -2, 1, -2),
+							ZIndex = 105
+						})
+						
+						utility:create("UIGradient", {
+							Parent = sliderBackground,
+							Rotation = 90,
+							Color = newColorSequence({
+								newColorSequenceKeypoint(0, fromRGB(30, 30, 35)),
+								newColorSequenceKeypoint(1, fromRGB(23, 23, 28))
+							})
+						})
+						
+						sliderFill = utility:create("Frame", {
+							Name = "Fill",
+							Parent = sliderBackground,
+							BackgroundColor3 = library.Theme["Accent"],
+							BorderColor3 = fromRGB(0, 0, 0),
+							BorderSizePixel = 0,
+							Size = newUDim2(0.5, 0, 1, 0),
+							ZIndex = 106
+						})
+						
+						utility:create("UIGradient", {
+							Parent = sliderFill,
+							Rotation = 90,
+							Color = newColorSequence({
+								newColorSequenceKeypoint(0, fromRGB(255, 255, 255)),
+								newColorSequenceKeypoint(1, fromRGB(42, 42, 42))
+							})
+						})
+						
+						sliderValue = utility:create("TextLabel", {
+							Name = "Value",
+							Parent = sliderFill,
+							BackgroundTransparency = 1,
+							BorderColor3 = fromRGB(0, 0, 0),
+							BorderSizePixel = 0,
+							AnchorPoint = newVector2(0.5, 0.5),
+							Position = newUDim2(1, 0, 0.5, 1),
+							Size = newUDim2(0, 50, 0, 12),
+							FontFace = library.Font,
+							Text = "50",
+							TextColor3 = fromRGB(235, 235, 235),
+							TextSize = 12,
+							ZIndex = 107
+						})
+						
+						utility:create("UIStroke", {
+							Parent = sliderValue,
+							Color = library.Theme["Text Border"],
+							Thickness = 1,
+							LineJoinMode = Enum.LineJoinMode.Miter
+						})
+						
+						slider.frame = sliderFrame
+						slider.text = sliderText
+						slider.outline = sliderOutline
+						slider.background = sliderBackground
+						slider.fill = sliderFill
+						slider.valueLabel = sliderValue
+					end
+					
+					do -- // Slider Functions
+						function slider:Set(value)
+							slider.value = clamp(floor(value / slider.decimals + 0.5) * slider.decimals, slider.min, slider.max)
+							library.flags[slider.flag] = slider.value
+							
+							slider.valueLabel.Text = tostring(slider.value) .. slider.suffix
+							
+							local percentage = (slider.value - slider.min) / (slider.max - slider.min)
+							utility:tween(slider.fill, {Size = newUDim2(percentage, 0, 1, 0)}, 0.1)
+							
+							slider.callback(slider.value)
+						end
+						
+						function slider:Get()
+							return slider.value
+						end
+					end
+					
+					sliderOutline.MouseButton1Down:Connect(function()
+						slider.dragging = true
+						
+						local function update()
+							local mousePos = uis:GetMouseLocation().X
+							local sliderPos = slider.outline.AbsolutePosition.X
+							local sliderSize = slider.outline.AbsoluteSize.X
+							local percentage = clamp((mousePos - sliderPos) / sliderSize, 0, 1)
+							local value = slider.min + (slider.max - slider.min) * percentage
+							slider:Set(value)
+						end
+						
+						update()
+						
+						local moveConnection
+						moveConnection = uis.InputChanged:Connect(function(input)
+							if input.UserInputType == Enum.UserInputType.MouseMovement and slider.dragging then
+								update()
+							end
+						end)
+						
+						local releaseConnection
+						releaseConnection = uis.InputEnded:Connect(function(input)
+							if input.UserInputType == Enum.UserInputType.MouseButton1 then
+								slider.dragging = false
+								moveConnection:Disconnect()
+								releaseConnection:Disconnect()
+							end
+						end)
+					end)
+					
+					slider:Set(slider.default)
+					
+					return slider
+				end
+				
 				return section
 			end
 			
@@ -1387,13 +1785,26 @@ do
 		Side = 2
 	})
 	
-	-- пример тогла
+	-- примеры элементов
 	boxSection:AddToggle({
 		Name = "Enabled",
 		Flag = "BoxESP_Enabled",
 		Default = false,
 		Callback = function(value)
 			print("Box ESP:", value)
+		end
+	})
+	
+	boxSection:AddSlider({
+		Name = "Thickness",
+		Flag = "BoxESP_Thickness",
+		Min = 1,
+		Max = 5,
+		Default = 2,
+		Decimals = 1,
+		Suffix = "px",
+		Callback = function(value)
+			print("Box Thickness:", value)
 		end
 	})
 	
