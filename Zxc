@@ -42,8 +42,8 @@ local library = {
 	},
 	
 	Folders = {
-		Directory = "UILibrary",
-		Assets = "UILibrary/Assets"
+		Directory = "typescript",
+		Assets = "typescript/Assets"
 	},
 	
 	Font = nil
@@ -255,10 +255,77 @@ function library:CreateWindow(properties)
 			Thickness = 1
 		})
 		
+		-- subtabs main frame (справа от mainFrame)
+		local subTabsMainFrame = utility:create("Frame", {
+			Name = "SubTabsMainFrame",
+			Parent = mainFrame,
+			BackgroundColor3 = library.Theme["Background"],
+			BackgroundTransparency = 0,
+			BorderColor3 = library.Theme["Border"],
+			BorderSizePixel = 0,
+			Position = newUDim2(1.01, 0, 0, 0),
+			Size = newUDim2(0, 50, 1, 0),
+			Visible = false,
+			ZIndex = 100
+		})
+		
+		-- subtabs main frame stroke
+		utility:create("UIStroke", {
+			Parent = subTabsMainFrame,
+			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+			Color = library.Theme["Border"],
+			Thickness = 1,
+			LineJoinMode = Enum.LineJoinMode.Miter
+		})
+		
+		-- top accent line for subtabs
+		local subTabsAccentLine = utility:create("Frame", {
+			Name = "TopAccentLine",
+			Parent = subTabsMainFrame,
+			BackgroundColor3 = library.Theme["Accent"],
+			BorderColor3 = fromRGB(0, 0, 0),
+			BorderSizePixel = 0,
+			Size = newUDim2(1, 0, 0, 2),
+			ZIndex = 101
+		})
+		
+		-- uistroke for subtabs accent line
+		utility:create("UIStroke", {
+			Parent = subTabsAccentLine,
+			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+			Color = library.Theme["Border"],
+			Thickness = 1,
+			LineJoinMode = Enum.LineJoinMode.Miter
+		})
+		
+		-- subtabs holder (прозрачный контейнер, выровнен с tabs)
+		local subTabsHolder = utility:create("Frame", {
+			Name = "SubTabsHolder",
+			Parent = subTabsMainFrame,
+			BackgroundColor3 = fromRGB(255, 255, 255),
+			BackgroundTransparency = 1,
+			BorderColor3 = fromRGB(0, 0, 0),
+			BorderSizePixel = 0,
+			Position = newUDim2(0, 0, 0.00499999989, 0),
+			Size = newUDim2(1, 0, 1, -2),
+			ZIndex = 101
+		})
+		
+		-- subtabs list layout (вертикальный)
+		utility:create("UIListLayout", {
+			Parent = subTabsHolder,
+			FillDirection = Enum.FillDirection.Vertical,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+			Padding = newUDim(0, 0),
+			HorizontalAlignment = Enum.HorizontalAlignment.Center
+		})
+		
 		-- index
 		window.gui = screenGui
 		window.frame = mainFrame
 		window.tabsHolder = tabsHolder
+		window.subTabsMainFrame = subTabsMainFrame
+		window.subTabsHolder = subTabsHolder
 		window.nameText = nameText
 		
 		-- draggable
@@ -274,6 +341,38 @@ function library:CreateWindow(properties)
 			end
 			
 			window.currentTab = tab
+			
+			-- show/hide subtabs holder
+			if tab and #tab.subtabs > 0 then
+				window.subTabsMainFrame.Visible = true
+				
+				-- hide all subtabs first
+				for _, t in pairs(window.tabs) do
+					for _, subtab in pairs(t.subtabs) do
+						subtab.button.Visible = false
+					end
+				end
+				
+				-- show current tab subtabs
+				for _, subtab in pairs(tab.subtabs) do
+					subtab.button.Visible = true
+				end
+				
+				-- open first subtab if none open
+				local hasOpenSubTab = false
+				for _, subtab in pairs(tab.subtabs) do
+					if subtab.open then
+						hasOpenSubTab = true
+						break
+					end
+				end
+				
+				if not hasOpenSubTab and #tab.subtabs > 0 then
+					tab.subtabs[1]:Set(true)
+				end
+			else
+				window.subTabsMainFrame.Visible = false
+			end
 		end
 		
 		function window:CreateTab(properties)
@@ -282,7 +381,9 @@ function library:CreateWindow(properties)
 			local tab = {
 				text = properties.Text or "Tab",
 				open = false,
-				window = window
+				window = window,
+				subtabs = {},
+				currentSubTab = nil
 			}
 			
 			do -- // Tab UI
@@ -309,7 +410,7 @@ function library:CreateWindow(properties)
 					Thickness = 1
 				})
 				
-				-- tab content frame
+				-- tab content frame (сдвигаем вправо если есть подвкладки)
 				local tabContent = utility:create("Frame", {
 					Name = "TabContent",
 					Parent = window.frame,
@@ -370,6 +471,114 @@ function library:CreateWindow(properties)
 				tab:Set(true)
 			end
 			
+			do -- // SubTab Functions
+				function tab:CreateSubTab(properties)
+					properties = properties or {}
+					
+					local subtab = {
+						text = properties.Text or "SubTab",
+						open = false,
+						tab = tab,
+						window = window
+					}
+					
+					do -- // SubTab UI
+						-- subtab button
+						local subTabButton = utility:create("TextButton", {
+							Name = "SUBTAB",
+							Parent = window.subTabsHolder,
+							BackgroundColor3 = library.Theme["Background"],
+							BackgroundTransparency = 0,
+							BorderColor3 = library.Theme["Border"],
+							BorderSizePixel = 0,
+							Size = newUDim2(0, 50, 0, 15),
+							FontFace = library.Font,
+							Text = subtab.text,
+							TextColor3 = library.Theme["Text"],
+							TextSize = 12,
+							TextWrapped = true,
+							Visible = false,
+							ZIndex = 102
+						})
+						
+						-- text stroke
+						utility:create("UIStroke", {
+							Parent = subTabButton,
+							Color = library.Theme["Text Border"],
+							Thickness = 1
+						})
+						
+						-- subtab content frame
+						local subTabContent = utility:create("Frame", {
+							Name = "SubTabContent",
+							Parent = window.frame,
+							BackgroundColor3 = library.Theme["Background"],
+							BackgroundTransparency = 0,
+							BorderColor3 = fromRGB(0, 0, 0),
+							BorderSizePixel = 0,
+							Position = newUDim2(0, 0, 0, 17),
+							Size = newUDim2(1, 0, 1, -32),
+							Visible = false,
+							ZIndex = 99
+						})
+						
+						-- index
+						subtab.button = subTabButton
+						subtab.content = subTabContent
+						
+						-- button logic
+						subTabButton.MouseButton1Click:Connect(function()
+							if not subtab.open then
+								subtab:Set(true)
+							end
+						end)
+						
+						-- hover effects
+						subTabButton.MouseEnter:Connect(function()
+							if not subtab.open then
+								utility:tween(subTabButton, {TextColor3 = library.Theme["Hovered Element"]}, 0.15)
+							end
+						end)
+						
+						subTabButton.MouseLeave:Connect(function()
+							if not subtab.open then
+								utility:tween(subTabButton, {TextColor3 = library.Theme["Text"]}, 0.15)
+							end
+						end)
+					end
+					
+					do -- // SubTab Functions
+						function subtab:Set(state)
+							subtab.open = state
+							
+							-- close other subtabs in same tab
+							if state then
+								for _, st in pairs(tab.subtabs) do
+									if st ~= subtab and st.open then
+										st:Set(false)
+									end
+								end
+								tab.currentSubTab = subtab
+							end
+							
+							-- update visibility
+							subtab.content.Visible = subtab.open
+							
+							-- update colors
+							if subtab.open then
+								utility:tween(subtab.button, {TextColor3 = library.Theme["Accent"]}, 0.2)
+							else
+								utility:tween(subtab.button, {TextColor3 = library.Theme["Text"]}, 0.2)
+							end
+						end
+					end
+					
+					tab.subtabs[#tab.subtabs + 1] = subtab
+					
+					return subtab
+				end
+			end
+			
 			window.tabs[#window.tabs + 1] = tab
 			
 			return tab
@@ -396,6 +605,19 @@ do
 	
 	local visualsTab = window:CreateTab({
 		Text = "Visuals"
+	})
+	
+	-- создаем подвкладки для Visuals
+	local espSubTab = visualsTab:CreateSubTab({
+		Text = "ESP"
+	})
+	
+	local worldSubTab = visualsTab:CreateSubTab({
+		Text = "World"
+	})
+	
+	local miscSubTab = visualsTab:CreateSubTab({
+		Text = "Misc"
 	})
 	
 	local miscTab = window:CreateTab({
