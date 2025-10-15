@@ -914,6 +914,126 @@ function library:CreateWindow(properties)
 							
 							subtab.sections[#subtab.sections + 1] = section
 							
+							-- AddToggle для секции
+							function section:AddToggle(properties)
+								properties = properties or {}
+								
+								local toggle = {
+									name = properties.Name or "Toggle",
+									flag = properties.Flag or properties.Name or "Toggle",
+									value = properties.Default or false,
+									callback = properties.Callback or function() end
+								}
+								
+								local toggleButton, indicator, toggleText
+								
+								do -- // Toggle UI
+									-- toggle button (прозрачная кнопка на всю ширину)
+									toggleButton = utility:create("TextButton", {
+										Name = "Toggle",
+										Parent = section.container,
+										BackgroundColor3 = library.Theme["Background"],
+										BackgroundTransparency = 1,
+										BorderColor3 = fromRGB(0, 0, 0),
+										BorderSizePixel = 0,
+										Size = newUDim2(1, 0, 0, 15),
+										AutoButtonColor = false,
+										Text = "",
+										ZIndex = 103
+									})
+									
+									-- indicator (квадрат 10x10)
+									indicator = utility:create("Frame", {
+										Name = "Indicator",
+										Parent = toggleButton,
+										BackgroundColor3 = library.Theme["Element"],
+										BorderColor3 = fromRGB(0, 0, 0),
+										BorderSizePixel = 0,
+										AnchorPoint = newVector2(0, 0.5),
+										Position = newUDim2(0, 0, 0.5, 0),
+										Size = newUDim2(0, 10, 0, 10),
+										ZIndex = 104
+									})
+									
+									-- indicator outline
+									utility:create("UIStroke", {
+										Parent = indicator,
+										ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+										Color = library.Theme["Outline"],
+										Thickness = 1,
+										LineJoinMode = Enum.LineJoinMode.Miter
+									})
+									
+									-- indicator gradient
+									utility:create("UIGradient", {
+										Parent = indicator,
+										Rotation = 90,
+										Color = newColorSequence({
+											newColorSequenceKeypoint(0, fromRGB(255, 255, 255)),
+											newColorSequenceKeypoint(1, fromRGB(127, 127, 127))
+										})
+									})
+									
+									-- toggle text
+									toggleText = utility:create("TextLabel", {
+										Name = "Text",
+										Parent = toggleButton,
+										BackgroundTransparency = 1,
+										BorderColor3 = fromRGB(0, 0, 0),
+										BorderSizePixel = 0,
+										Position = newUDim2(0, 18, 0, -1),
+										Size = newUDim2(1, -18, 1, 0),
+										FontFace = library.Font,
+										Text = toggle.name,
+										TextColor3 = library.Theme["Text"],
+										TextSize = 12,
+										TextXAlignment = Enum.TextXAlignment.Left,
+										ZIndex = 104
+									})
+									
+									-- index
+									toggle.button = toggleButton
+									toggle.indicator = indicator
+									toggle.text = toggleText
+								end
+								
+								do -- // Toggle Functions
+									function toggle:Set(value)
+										toggle.value = value
+										library.flags[toggle.flag] = toggle.value
+										
+										if toggle.value then
+											-- включен - красный акцент
+											utility:tween(toggle.indicator, {BackgroundColor3 = library.Theme["Accent"]}, 0.2)
+											utility:tween(toggle.text, {TextColor3 = library.Theme["Accent"]}, 0.2)
+										else
+											-- выключен - серый
+											utility:tween(toggle.indicator, {BackgroundColor3 = library.Theme["Element"]}, 0.2)
+											utility:tween(toggle.text, {TextColor3 = library.Theme["Text"]}, 0.2)
+										end
+										
+										-- callback
+										toggle.callback(toggle.value)
+									end
+									
+									function toggle:Get()
+										return toggle.value
+									end
+								end
+								
+								-- click event
+								library.connections[#library.connections + 1] = toggleButton.MouseButton1Down:Connect(function()
+									toggle:Set(not toggle.value)
+								end)
+								
+								-- set default
+								if properties.Default then
+									toggle:Set(properties.Default)
+								end
+								
+								return toggle
+							end
+							
 							return section
 						end
 					end
@@ -1048,6 +1168,123 @@ function library:CreateWindow(properties)
 				
 				tab.sections[#tab.sections + 1] = section
 				
+				-- AddToggle для секции (таб без подвкладок)
+				function section:AddToggle(properties)
+					properties = properties or {}
+					
+					local toggle = {
+						name = properties.Name or "Toggle",
+						flag = properties.Flag or properties.Name or "Toggle",
+						value = properties.Default or false,
+						callback = properties.Callback or function() end
+					}
+					
+					local toggleButton, indicator, toggleText
+					
+					do -- // Toggle UI
+						-- toggle button
+						toggleButton = utility:create("TextButton", {
+							Name = "Toggle",
+							Parent = section.container,
+							BackgroundColor3 = library.Theme["Background"],
+							BackgroundTransparency = 1,
+							BorderColor3 = fromRGB(0, 0, 0),
+							BorderSizePixel = 0,
+							Size = newUDim2(1, 0, 0, 15),
+							AutoButtonColor = false,
+							Text = "",
+							ZIndex = 103
+						})
+						
+						-- indicator
+						indicator = utility:create("Frame", {
+							Name = "Indicator",
+							Parent = toggleButton,
+							BackgroundColor3 = library.Theme["Element"],
+							BorderColor3 = fromRGB(0, 0, 0),
+							BorderSizePixel = 0,
+							AnchorPoint = newVector2(0, 0.5),
+							Position = newUDim2(0, 0, 0.5, 0),
+							Size = newUDim2(0, 10, 0, 10),
+							ZIndex = 104
+						})
+						
+						-- indicator outline
+						utility:create("UIStroke", {
+							Parent = indicator,
+							ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+							Color = library.Theme["Outline"],
+							Thickness = 1,
+							LineJoinMode = Enum.LineJoinMode.Miter
+						})
+						
+						-- indicator gradient
+						utility:create("UIGradient", {
+							Parent = indicator,
+							Rotation = 90,
+							Color = newColorSequence({
+								newColorSequenceKeypoint(0, fromRGB(255, 255, 255)),
+								newColorSequenceKeypoint(1, fromRGB(127, 127, 127))
+							})
+						})
+						
+						-- toggle text
+						toggleText = utility:create("TextLabel", {
+							Name = "Text",
+							Parent = toggleButton,
+							BackgroundTransparency = 1,
+							BorderColor3 = fromRGB(0, 0, 0),
+							BorderSizePixel = 0,
+							Position = newUDim2(0, 18, 0, -1),
+							Size = newUDim2(1, -18, 1, 0),
+							FontFace = library.Font,
+							Text = toggle.name,
+							TextColor3 = library.Theme["Text"],
+							TextSize = 12,
+							TextXAlignment = Enum.TextXAlignment.Left,
+							ZIndex = 104
+						})
+						
+						-- index
+						toggle.button = toggleButton
+						toggle.indicator = indicator
+						toggle.text = toggleText
+					end
+					
+					do -- // Toggle Functions
+						function toggle:Set(value)
+							toggle.value = value
+							library.flags[toggle.flag] = toggle.value
+							
+							if toggle.value then
+								utility:tween(toggle.indicator, {BackgroundColor3 = library.Theme["Accent"]}, 0.2)
+								utility:tween(toggle.text, {TextColor3 = library.Theme["Accent"]}, 0.2)
+							else
+								utility:tween(toggle.indicator, {BackgroundColor3 = library.Theme["Element"]}, 0.2)
+								utility:tween(toggle.text, {TextColor3 = library.Theme["Text"]}, 0.2)
+							end
+							
+							toggle.callback(toggle.value)
+						end
+						
+						function toggle:Get()
+							return toggle.value
+						end
+					end
+					
+					-- click event
+					library.connections[#library.connections + 1] = toggleButton.MouseButton1Down:Connect(function()
+						toggle:Set(not toggle.value)
+					end)
+					
+					-- set default
+					if properties.Default then
+						toggle:Set(properties.Default)
+					end
+					
+					return toggle
+				end
+				
 				return section
 			end
 			
@@ -1111,6 +1348,16 @@ do
 		Side = 2
 	})
 	
+	-- пример тогла
+	boxSection:AddToggle({
+		Name = "Enabled",
+		Flag = "BoxESP_Enabled",
+		Default = false,
+		Callback = function(value)
+			print("Box ESP:", value)
+		end
+	})
+	
 	local miscTab = window:CreateTab({
 		Text = "Misc",
 		Columns = 2
@@ -1126,6 +1373,7 @@ do
 		Name = "Utility",
 		Side = 2
 	})
+	
 	
 	local settingsTab = window:CreateTab({
 		Text = "Settings",
