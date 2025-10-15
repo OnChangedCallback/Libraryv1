@@ -601,17 +601,56 @@ function library:CreateWindow(properties)
 			
 			do -- // Tab Functions
 				function tab:Set(state)
-					tab.open = state
-					
-					-- update visibility
-					tab.content.Visible = tab.open
-					
-					-- update text colors
-					if tab.open then
+					if state then
+						-- закрываем все другие табы
+						for _, otherTab in pairs(window.tabs) do
+							if otherTab ~= tab and otherTab.open then
+								otherTab.open = false
+								otherTab.content.Visible = false
+								utility:tween(otherTab.button, {TextColor3 = library.Theme["Text"]}, 0.2)
+								
+								-- закрываем все подвкладки другого таба
+								for _, subtab in pairs(otherTab.subtabs) do
+									if subtab.content then
+										subtab.content.Visible = false
+									end
+								end
+							end
+						end
+						
+						-- открываем текущий таб
+						tab.open = true
+						tab.content.Visible = true
 						utility:tween(tab.button, {TextColor3 = library.Theme["Accent"]}, 0.2)
 						window:SetTab(tab)
+						
+						-- если есть подвкладки, открываем первую открытую или первую по списку
+						if #tab.subtabs > 0 then
+							local hasOpenSubTab = false
+							for _, subtab in pairs(tab.subtabs) do
+								if subtab.open then
+									subtab.content.Visible = true
+									hasOpenSubTab = true
+									break
+								end
+							end
+							
+							if not hasOpenSubTab and #tab.subtabs > 0 then
+								tab.subtabs[1]:Set(true)
+							end
+						end
 					else
+						-- закрываем текущий таб
+						tab.open = false
+						tab.content.Visible = false
 						utility:tween(tab.button, {TextColor3 = library.Theme["Text"]}, 0.2)
+						
+						-- закрываем все подвкладки
+						for _, subtab in pairs(tab.subtabs) do
+							if subtab.content then
+								subtab.content.Visible = false
+							end
+						end
 					end
 				end
 			end
