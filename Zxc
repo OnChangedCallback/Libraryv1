@@ -27,6 +27,7 @@ local library = {
 	windows = {},
 	connections = {},
 	flags = {},
+	activeSlider = nil,
 	
 	Theme = {
 		["Background"] = fromRGB(20, 15, 15),
@@ -1060,10 +1061,10 @@ function library:CreateWindow(properties)
 									end
 								end
 								
-								-- click event
-								library.connections[#library.connections + 1] = toggleButton.MouseButton1Down:Connect(function()
-									toggle:Set(not toggle.value)
-								end)
+								-- click event (оптимизировано - MouseButton1Click вместо MouseButton1Down)
+							library.connections[#library.connections + 1] = toggleButton.MouseButton1Click:Connect(function()
+								toggle:Set(not toggle.value)
+							end)
 								
 								-- set default
 								if properties.Default then
@@ -1239,13 +1240,8 @@ function library:CreateWindow(properties)
 									function slider:Get()
 										return slider.value
 									end
-								end
-								
-								-- dragging logic
-								sliderOutline.MouseButton1Down:Connect(function()
-									slider.dragging = true
 									
-									local function update()
+									function slider:UpdateValue()
 										local mousePos = uis:GetMouseLocation().X
 										local sliderPos = slider.outline.AbsolutePosition.X
 										local sliderSize = slider.outline.AbsoluteSize.X
@@ -1253,24 +1249,12 @@ function library:CreateWindow(properties)
 										local value = slider.min + (slider.max - slider.min) * percentage
 										slider:Set(value)
 									end
-									
-									update()
-									
-									local moveConnection
-									moveConnection = uis.InputChanged:Connect(function(input)
-										if input.UserInputType == Enum.UserInputType.MouseMovement and slider.dragging then
-											update()
-										end
-									end)
-									
-									local releaseConnection
-									releaseConnection = uis.InputEnded:Connect(function(input)
-										if input.UserInputType == Enum.UserInputType.MouseButton1 then
-											slider.dragging = false
-											moveConnection:Disconnect()
-											releaseConnection:Disconnect()
-										end
-									end)
+								end
+								
+								-- dragging logic (оптимизировано)
+								library.connections[#library.connections + 1] = sliderOutline.MouseButton1Down:Connect(function()
+									library.activeSlider = slider
+									slider:UpdateValue()
 								end)
 								
 								-- set default
@@ -1507,7 +1491,7 @@ function library:CreateWindow(properties)
 											end
 										end
 										
-										optionButton.MouseButton1Down:Connect(function()
+										optionButton.MouseButton1Click:Connect(function()
 											if dropdown.multi then
 												-- multi select
 												optionData.selected = not optionData.selected
@@ -1598,11 +1582,17 @@ function library:CreateWindow(properties)
 									dropdown:AddOption(item)
 								end
 								
-								-- button click
-								library.connections[#library.connections + 1] = dropdownButton.InputBegan:Connect(function(input)
-									if input.UserInputType == Enum.UserInputType.MouseButton1 then
-										dropdown:SetOpen(not dropdown.isOpen)
-									end
+								-- создаем невидимую кнопку для клика
+								local clickButton = utility:create("TextButton", {
+									Parent = dropdownButton,
+									BackgroundTransparency = 1,
+									Size = newUDim2(1, 0, 1, 0),
+									Text = "",
+									ZIndex = 106
+								})
+								
+								library.connections[#library.connections + 1] = clickButton.MouseButton1Click:Connect(function()
+									dropdown:SetOpen(not dropdown.isOpen)
 								end)
 								
 								-- set default
@@ -1851,10 +1841,10 @@ function library:CreateWindow(properties)
 						end
 					end
 					
-					-- click event
-					library.connections[#library.connections + 1] = toggleButton.MouseButton1Down:Connect(function()
-						toggle:Set(not toggle.value)
-					end)
+					-- click event (оптимизировано)
+				library.connections[#library.connections + 1] = toggleButton.MouseButton1Click:Connect(function()
+					toggle:Set(not toggle.value)
+				end)
 					
 					-- set default
 					if properties.Default then
@@ -2018,12 +2008,8 @@ function library:CreateWindow(properties)
 						function slider:Get()
 							return slider.value
 						end
-					end
-					
-					sliderOutline.MouseButton1Down:Connect(function()
-						slider.dragging = true
 						
-						local function update()
+						function slider:UpdateValue()
 							local mousePos = uis:GetMouseLocation().X
 							local sliderPos = slider.outline.AbsolutePosition.X
 							local sliderSize = slider.outline.AbsoluteSize.X
@@ -2031,24 +2017,11 @@ function library:CreateWindow(properties)
 							local value = slider.min + (slider.max - slider.min) * percentage
 							slider:Set(value)
 						end
-						
-						update()
-						
-						local moveConnection
-						moveConnection = uis.InputChanged:Connect(function(input)
-							if input.UserInputType == Enum.UserInputType.MouseMovement and slider.dragging then
-								update()
-							end
-						end)
-						
-						local releaseConnection
-						releaseConnection = uis.InputEnded:Connect(function(input)
-							if input.UserInputType == Enum.UserInputType.MouseButton1 then
-								slider.dragging = false
-								moveConnection:Disconnect()
-								releaseConnection:Disconnect()
-							end
-						end)
+					end
+					
+					library.connections[#library.connections + 1] = sliderOutline.MouseButton1Down:Connect(function()
+						library.activeSlider = slider
+						slider:UpdateValue()
 					end)
 					
 					slider:Set(slider.default)
@@ -2275,7 +2248,7 @@ function library:CreateWindow(properties)
 							end
 						end
 						
-						optionButton.MouseButton1Down:Connect(function()
+						optionButton.MouseButton1Click:Connect(function()
 							if dropdown.multi then
 								optionData.selected = not optionData.selected
 								optionData:Toggle(optionData.selected)
@@ -2363,10 +2336,17 @@ function library:CreateWindow(properties)
 					dropdown:AddOption(item)
 				end
 				
-				library.connections[#library.connections + 1] = dropdownButton.InputBegan:Connect(function(input)
-					if input.UserInputType == Enum.UserInputType.MouseButton1 then
-						dropdown:SetOpen(not dropdown.isOpen)
-					end
+				-- button click (оптимизировано)
+				local clickButton = utility:create("TextButton", {
+					Parent = dropdownButton,
+					BackgroundTransparency = 1,
+					Size = newUDim2(1, 0, 1, 0),
+					Text = "",
+					ZIndex = 106
+				})
+				
+				library.connections[#library.connections + 1] = clickButton.MouseButton1Click:Connect(function()
+					dropdown:SetOpen(not dropdown.isOpen)
 				end)
 				
 				if dropdown.default then
@@ -2377,15 +2357,38 @@ function library:CreateWindow(properties)
 			end
 			
 			return section
-		end
-			
-			window.tabs[#window.tabs + 1] = tab
-			
-			return tab
-		 end
+	end
+		
+		window.tabs[#window.tabs + 1] = tab
+		
+		return tab
+	 end
 	end
 	
 	library.windows[#library.windows + 1] = window
+	
+	-- глобальные обработчики для слайдеров (создаются один раз, оптимизированы)
+	if #library.windows == 1 then
+		local lastUpdate = 0
+		local updateInterval = 1/60 -- 60 FPS cap для обновления слайдера
+		
+		library.connections[#library.connections + 1] = uis.InputChanged:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseMovement and library.activeSlider then
+				local now = tick()
+				if now - lastUpdate >= updateInterval then
+					library.activeSlider:UpdateValue()
+					lastUpdate = now
+				end
+			end
+		end)
+		
+		library.connections[#library.connections + 1] = uis.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 and library.activeSlider then
+				library.activeSlider:UpdateValue() -- финальное обновление
+				library.activeSlider = nil
+			end
+		end)
+	end
 	
 	return setmetatable(window, library)
 end
