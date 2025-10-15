@@ -29,14 +29,14 @@ local library = {
 	flags = {},
 	
 	Theme = {
-		["Background"] = fromRGB(15, 15, 20),
-		["Inline"] = fromRGB(20, 20, 25),
-		["Page Background"] = fromRGB(20, 20, 22),
+		["Background"] = fromRGB(20, 15, 15),
+		["Inline"] = fromRGB(25, 20, 20),
+		["Page Background"] = fromRGB(22, 20, 20),
 		["Border"] = fromRGB(10, 10, 10),
-		["Outline"] = fromRGB(27, 27, 32),
-		["Accent"] = fromRGB(165, 58, 255),
-		["Element"] = fromRGB(33, 33, 36),
-		["Hovered Element"] = fromRGB(40, 40, 43),
+		["Outline"] = fromRGB(32, 27, 27),
+		["Accent"] = fromRGB(255, 58, 58),
+		["Element"] = fromRGB(36, 33, 33),
+		["Hovered Element"] = fromRGB(43, 38, 38),
 		["Text"] = fromRGB(215, 215, 215),
 		["Text Border"] = fromRGB(0, 0, 0)
 	},
@@ -476,7 +476,7 @@ function library:CreateWindow(properties)
 					Color = library.Theme["Outline"],
 					Thickness = 1,
 					LineJoinMode = Enum.LineJoinMode.Miter,
-					Transparency = 0.5
+					Transparency = 0.3
 				})
 				
 				-- text stroke
