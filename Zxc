@@ -469,6 +469,16 @@ function library:CreateWindow(properties)
 					TextWrapped = true
 				})
 				
+				-- button outline
+				utility:create("UIStroke", {
+					Parent = tabButton,
+					ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+					Color = library.Theme["Outline"],
+					Thickness = 1,
+					LineJoinMode = Enum.LineJoinMode.Miter,
+					Transparency = 0.5
+				})
+				
 				-- text stroke
 				utility:create("UIStroke", {
 					Parent = tabButton,
