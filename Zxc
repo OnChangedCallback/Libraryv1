@@ -1279,6 +1279,340 @@ function library:CreateWindow(properties)
 								return slider
 							end
 							
+							-- AddDropdown для секции
+							function section:AddDropdown(properties)
+								properties = properties or {}
+								
+								local dropdown = {
+									name = properties.Name or "Dropdown",
+									flag = properties.Flag or properties.Name or "Dropdown",
+									items = properties.Items or {"Option 1", "Option 2", "Option 3"},
+									default = properties.Default or nil,
+									multi = properties.Multi or false,
+									value = properties.Multi and {} or nil,
+									callback = properties.Callback or function() end,
+									isOpen = false,
+									options = {}
+								}
+								
+								local dropdownFrame, dropdownText, dropdownButton, dropdownValue, dropdownIcon, optionHolder
+								
+								do -- // Dropdown UI
+									-- dropdown frame
+									dropdownFrame = utility:create("Frame", {
+										Name = "Dropdown",
+										Parent = section.container,
+										BackgroundTransparency = 1,
+										BorderColor3 = fromRGB(0, 0, 0),
+										BorderSizePixel = 0,
+										Size = newUDim2(1, 0, 0, 34),
+										ZIndex = 103
+									})
+									
+									-- dropdown text (название)
+									dropdownText = utility:create("TextLabel", {
+										Name = "Text",
+										Parent = dropdownFrame,
+										BackgroundTransparency = 1,
+										BorderColor3 = fromRGB(0, 0, 0),
+										BorderSizePixel = 0,
+										Position = newUDim2(0, 0, 0, 0),
+										Size = newUDim2(1, 0, 0, 13),
+										FontFace = library.Font,
+										Text = dropdown.name,
+										TextColor3 = library.Theme["Text"],
+										TextSize = 12,
+										TextXAlignment = Enum.TextXAlignment.Left,
+										ZIndex = 104
+									})
+									
+									utility:create("UIStroke", {
+										Parent = dropdownText,
+										Color = library.Theme["Text Border"],
+										Thickness = 1,
+										LineJoinMode = Enum.LineJoinMode.Miter
+									})
+									
+									-- dropdown button
+									dropdownButton = utility:create("Frame", {
+										Name = "Button",
+										Parent = dropdownFrame,
+										BackgroundColor3 = library.Theme["Background"],
+										BorderColor3 = library.Theme["Border"],
+										BorderSizePixel = 2,
+										Position = newUDim2(0, 0, 1, -17),
+										Size = newUDim2(1, 0, 0, 17),
+										ZIndex = 104
+									})
+									
+									-- button gradient
+									utility:create("UIGradient", {
+										Parent = dropdownButton,
+										Rotation = 90,
+										Color = newColorSequence({
+											newColorSequenceKeypoint(0, fromRGB(255, 255, 255)),
+											newColorSequenceKeypoint(1, fromRGB(100, 100, 100))
+										})
+									})
+									
+									-- button outline
+									utility:create("UIStroke", {
+										Parent = dropdownButton,
+										ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+										Color = library.Theme["Outline"],
+										Thickness = 1,
+										LineJoinMode = Enum.LineJoinMode.Miter
+									})
+									
+									-- dropdown value text
+									dropdownValue = utility:create("TextLabel", {
+										Name = "Value",
+										Parent = dropdownButton,
+										BackgroundTransparency = 1,
+										BorderColor3 = fromRGB(0, 0, 0),
+										BorderSizePixel = 0,
+										Position = newUDim2(0, 5, 0, -1),
+										Size = newUDim2(1, -25, 1, 0),
+										FontFace = library.Font,
+										Text = "--",
+										TextColor3 = library.Theme["Text"],
+										TextSize = 12,
+										TextXAlignment = Enum.TextXAlignment.Left,
+										TextTruncate = Enum.TextTruncate.AtEnd,
+										ZIndex = 105
+									})
+									
+									utility:create("UIStroke", {
+										Parent = dropdownValue,
+										Color = library.Theme["Text Border"],
+										Thickness = 1,
+										LineJoinMode = Enum.LineJoinMode.Miter
+									})
+									
+									-- dropdown icon (+/-)
+									dropdownIcon = utility:create("TextLabel", {
+										Name = "Icon",
+										Parent = dropdownButton,
+										BackgroundTransparency = 1,
+										BorderColor3 = fromRGB(0, 0, 0),
+										BorderSizePixel = 0,
+										Position = newUDim2(0, -4, 0, -1),
+										Size = newUDim2(1, 0, 1, 0),
+										FontFace = library.Font,
+										Text = "+",
+										TextColor3 = library.Theme["Text"],
+										TextSize = 12,
+										TextXAlignment = Enum.TextXAlignment.Right,
+										ZIndex = 105
+									})
+									
+									utility:create("UIStroke", {
+										Parent = dropdownIcon,
+										Color = library.Theme["Text Border"],
+										Thickness = 1,
+										LineJoinMode = Enum.LineJoinMode.Miter
+									})
+									
+									-- option holder
+									optionHolder = utility:create("Frame", {
+										Name = "OptionHolder",
+										Parent = dropdownFrame,
+										BackgroundColor3 = library.Theme["Inline"],
+										BorderColor3 = library.Theme["Border"],
+										BorderSizePixel = 2,
+										Position = newUDim2(0, 0, 1, 5),
+										Size = newUDim2(1, 0, 0, 0),
+										AutomaticSize = Enum.AutomaticSize.Y,
+										Visible = false,
+										ZIndex = 115
+									})
+									
+									utility:create("UIStroke", {
+										Parent = optionHolder,
+										ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+										Color = library.Theme["Outline"],
+										Thickness = 1,
+										LineJoinMode = Enum.LineJoinMode.Miter
+									})
+									
+									utility:create("UIListLayout", {
+										Parent = optionHolder,
+										SortOrder = Enum.SortOrder.LayoutOrder
+									})
+									
+									utility:create("UIPadding", {
+										Parent = optionHolder,
+										PaddingBottom = newUDim(0, 2)
+									})
+									
+									-- index
+									dropdown.frame = dropdownFrame
+									dropdown.text = dropdownText
+									dropdown.button = dropdownButton
+									dropdown.valueLabel = dropdownValue
+									dropdown.icon = dropdownIcon
+									dropdown.holder = optionHolder
+								end
+								
+								do -- // Dropdown Functions
+									function dropdown:AddOption(optionName)
+										local optionButton = utility:create("TextButton", {
+											Name = "Option",
+											Parent = dropdown.holder,
+											BackgroundTransparency = 1,
+											BorderColor3 = fromRGB(0, 0, 0),
+											BorderSizePixel = 0,
+											Size = newUDim2(1, 0, 0, 15),
+											AutoButtonColor = false,
+											Text = "",
+											ZIndex = 116
+										})
+										
+										local optionText = utility:create("TextLabel", {
+											Name = "Text",
+											Parent = optionButton,
+											BackgroundTransparency = 1,
+											BorderColor3 = fromRGB(0, 0, 0),
+											BorderSizePixel = 0,
+											Position = newUDim2(0, 5, 0, 0),
+											Size = newUDim2(1, -5, 1, 0),
+											FontFace = library.Font,
+											Text = optionName,
+											TextColor3 = library.Theme["Text"],
+											TextTransparency = 0.48,
+											TextSize = 12,
+											TextXAlignment = Enum.TextXAlignment.Left,
+											ZIndex = 117
+										})
+										
+										utility:create("UIStroke", {
+											Parent = optionText,
+											Color = library.Theme["Text Border"],
+											Thickness = 1,
+											LineJoinMode = Enum.LineJoinMode.Miter
+										})
+										
+										local optionData = {
+											name = optionName,
+											selected = false,
+											button = optionButton,
+											text = optionText
+										}
+										
+										function optionData:Toggle(state)
+											if state then
+												utility:tween(optionData.text, {TextColor3 = library.Theme["Accent"], TextTransparency = 0}, 0.2)
+											else
+												utility:tween(optionData.text, {TextColor3 = library.Theme["Text"], TextTransparency = 0.48}, 0.2)
+											end
+										end
+										
+										optionButton.MouseButton1Down:Connect(function()
+											if dropdown.multi then
+												-- multi select
+												optionData.selected = not optionData.selected
+												optionData:Toggle(optionData.selected)
+												
+												local index = table.find(dropdown.value, optionName)
+												if index then
+													table.remove(dropdown.value, index)
+												else
+													table.insert(dropdown.value, optionName)
+												end
+												
+												library.flags[dropdown.flag] = dropdown.value
+												dropdown.valueLabel.Text = #dropdown.value > 0 and table.concat(dropdown.value, ", ") or "--"
+												dropdown.callback(dropdown.value)
+											else
+												-- single select
+												for _, opt in pairs(dropdown.options) do
+													opt.selected = false
+													opt:Toggle(false)
+												end
+												
+												optionData.selected = true
+												optionData:Toggle(true)
+												dropdown.value = optionName
+												library.flags[dropdown.flag] = dropdown.value
+												dropdown.valueLabel.Text = optionName
+												dropdown.callback(dropdown.value)
+												dropdown:SetOpen(false)
+											end
+										end)
+										
+										dropdown.options[optionName] = optionData
+										return optionData
+									end
+									
+									function dropdown:SetOpen(state)
+										dropdown.isOpen = state
+										dropdown.holder.Visible = state
+										dropdown.icon.Text = state and "-" or "+"
+										dropdown.icon.Position = state and newUDim2(0, -5, 0, -1) or newUDim2(0, -4, 0, -1)
+									end
+									
+									function dropdown:Set(value)
+										if dropdown.multi then
+											if type(value) ~= "table" then return end
+											dropdown.value = value
+											
+											for _, opt in pairs(dropdown.options) do
+												opt.selected = false
+												opt:Toggle(false)
+											end
+											
+											for _, v in pairs(value) do
+												if dropdown.options[v] then
+													dropdown.options[v].selected = true
+													dropdown.options[v]:Toggle(true)
+												end
+											end
+											
+											library.flags[dropdown.flag] = dropdown.value
+											dropdown.valueLabel.Text = #dropdown.value > 0 and table.concat(dropdown.value, ", ") or "--"
+										else
+											if not dropdown.options[value] then return end
+											
+											for _, opt in pairs(dropdown.options) do
+												opt.selected = false
+												opt:Toggle(false)
+											end
+											
+											dropdown.options[value].selected = true
+											dropdown.options[value]:Toggle(true)
+											dropdown.value = value
+											library.flags[dropdown.flag] = dropdown.value
+											dropdown.valueLabel.Text = value
+										end
+										
+										dropdown.callback(dropdown.value)
+									end
+									
+									function dropdown:Get()
+										return dropdown.value
+									end
+								end
+								
+								-- add all items
+								for _, item in pairs(dropdown.items) do
+									dropdown:AddOption(item)
+								end
+								
+								-- button click
+								library.connections[#library.connections + 1] = dropdownButton.InputBegan:Connect(function(input)
+									if input.UserInputType == Enum.UserInputType.MouseButton1 then
+										dropdown:SetOpen(not dropdown.isOpen)
+									end
+								end)
+								
+								-- set default
+								if dropdown.default then
+									dropdown:Set(dropdown.default)
+								end
+								
+								return dropdown
+							end
+							
 							return section
 						end
 					end
@@ -1718,12 +2052,332 @@ function library:CreateWindow(properties)
 					end)
 					
 					slider:Set(slider.default)
+				
+				return slider
+			end
+			
+			-- AddDropdown для секции (таб без подвкладок)
+			function section:AddDropdown(properties)
+				properties = properties or {}
+				
+				local dropdown = {
+					name = properties.Name or "Dropdown",
+					flag = properties.Flag or properties.Name or "Dropdown",
+					items = properties.Items or {"Option 1", "Option 2", "Option 3"},
+					default = properties.Default or nil,
+					multi = properties.Multi or false,
+					value = properties.Multi and {} or nil,
+					callback = properties.Callback or function() end,
+					isOpen = false,
+					options = {}
+				}
+				
+				local dropdownFrame, dropdownText, dropdownButton, dropdownValue, dropdownIcon, optionHolder
+				
+				do -- // Dropdown UI
+					dropdownFrame = utility:create("Frame", {
+						Name = "Dropdown",
+						Parent = section.container,
+						BackgroundTransparency = 1,
+						BorderColor3 = fromRGB(0, 0, 0),
+						BorderSizePixel = 0,
+						Size = newUDim2(1, 0, 0, 34),
+						ZIndex = 103
+					})
 					
-					return slider
+					dropdownText = utility:create("TextLabel", {
+						Name = "Text",
+						Parent = dropdownFrame,
+						BackgroundTransparency = 1,
+						BorderColor3 = fromRGB(0, 0, 0),
+						BorderSizePixel = 0,
+						Position = newUDim2(0, 0, 0, 0),
+						Size = newUDim2(1, 0, 0, 13),
+						FontFace = library.Font,
+						Text = dropdown.name,
+						TextColor3 = library.Theme["Text"],
+						TextSize = 12,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						ZIndex = 104
+					})
+					
+					utility:create("UIStroke", {
+						Parent = dropdownText,
+						Color = library.Theme["Text Border"],
+						Thickness = 1,
+						LineJoinMode = Enum.LineJoinMode.Miter
+					})
+					
+					dropdownButton = utility:create("Frame", {
+						Name = "Button",
+						Parent = dropdownFrame,
+						BackgroundColor3 = library.Theme["Background"],
+						BorderColor3 = library.Theme["Border"],
+						BorderSizePixel = 2,
+						Position = newUDim2(0, 0, 1, -17),
+						Size = newUDim2(1, 0, 0, 17),
+						ZIndex = 104
+					})
+					
+					utility:create("UIGradient", {
+						Parent = dropdownButton,
+						Rotation = 90,
+						Color = newColorSequence({
+							newColorSequenceKeypoint(0, fromRGB(255, 255, 255)),
+							newColorSequenceKeypoint(1, fromRGB(100, 100, 100))
+						})
+					})
+					
+					utility:create("UIStroke", {
+						Parent = dropdownButton,
+						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+						Color = library.Theme["Outline"],
+						Thickness = 1,
+						LineJoinMode = Enum.LineJoinMode.Miter
+					})
+					
+					dropdownValue = utility:create("TextLabel", {
+						Name = "Value",
+						Parent = dropdownButton,
+						BackgroundTransparency = 1,
+						BorderColor3 = fromRGB(0, 0, 0),
+						BorderSizePixel = 0,
+						Position = newUDim2(0, 5, 0, -1),
+						Size = newUDim2(1, -25, 1, 0),
+						FontFace = library.Font,
+						Text = "--",
+						TextColor3 = library.Theme["Text"],
+						TextSize = 12,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						TextTruncate = Enum.TextTruncate.AtEnd,
+						ZIndex = 105
+					})
+					
+					utility:create("UIStroke", {
+						Parent = dropdownValue,
+						Color = library.Theme["Text Border"],
+						Thickness = 1,
+						LineJoinMode = Enum.LineJoinMode.Miter
+					})
+					
+					dropdownIcon = utility:create("TextLabel", {
+						Name = "Icon",
+						Parent = dropdownButton,
+						BackgroundTransparency = 1,
+						BorderColor3 = fromRGB(0, 0, 0),
+						BorderSizePixel = 0,
+						Position = newUDim2(0, -4, 0, -1),
+						Size = newUDim2(1, 0, 1, 0),
+						FontFace = library.Font,
+						Text = "+",
+						TextColor3 = library.Theme["Text"],
+						TextSize = 12,
+						TextXAlignment = Enum.TextXAlignment.Right,
+						ZIndex = 105
+					})
+					
+					utility:create("UIStroke", {
+						Parent = dropdownIcon,
+						Color = library.Theme["Text Border"],
+						Thickness = 1,
+						LineJoinMode = Enum.LineJoinMode.Miter
+					})
+					
+					optionHolder = utility:create("Frame", {
+						Name = "OptionHolder",
+						Parent = dropdownFrame,
+						BackgroundColor3 = library.Theme["Inline"],
+						BorderColor3 = library.Theme["Border"],
+						BorderSizePixel = 2,
+						Position = newUDim2(0, 0, 1, 5),
+						Size = newUDim2(1, 0, 0, 0),
+						AutomaticSize = Enum.AutomaticSize.Y,
+						Visible = false,
+						ZIndex = 115
+					})
+					
+					utility:create("UIStroke", {
+						Parent = optionHolder,
+						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+						Color = library.Theme["Outline"],
+						Thickness = 1,
+						LineJoinMode = Enum.LineJoinMode.Miter
+					})
+					
+					utility:create("UIListLayout", {
+						Parent = optionHolder,
+						SortOrder = Enum.SortOrder.LayoutOrder
+					})
+					
+					utility:create("UIPadding", {
+						Parent = optionHolder,
+						PaddingBottom = newUDim(0, 2)
+					})
+					
+					dropdown.frame = dropdownFrame
+					dropdown.text = dropdownText
+					dropdown.button = dropdownButton
+					dropdown.valueLabel = dropdownValue
+					dropdown.icon = dropdownIcon
+					dropdown.holder = optionHolder
 				end
 				
-				return section
+				do -- // Dropdown Functions
+					function dropdown:AddOption(optionName)
+						local optionButton = utility:create("TextButton", {
+							Name = "Option",
+							Parent = dropdown.holder,
+							BackgroundTransparency = 1,
+							BorderColor3 = fromRGB(0, 0, 0),
+							BorderSizePixel = 0,
+							Size = newUDim2(1, 0, 0, 15),
+							AutoButtonColor = false,
+							Text = "",
+							ZIndex = 116
+						})
+						
+						local optionText = utility:create("TextLabel", {
+							Name = "Text",
+							Parent = optionButton,
+							BackgroundTransparency = 1,
+							BorderColor3 = fromRGB(0, 0, 0),
+							BorderSizePixel = 0,
+							Position = newUDim2(0, 5, 0, 0),
+							Size = newUDim2(1, -5, 1, 0),
+							FontFace = library.Font,
+							Text = optionName,
+							TextColor3 = library.Theme["Text"],
+							TextTransparency = 0.48,
+							TextSize = 12,
+							TextXAlignment = Enum.TextXAlignment.Left,
+							ZIndex = 117
+						})
+						
+						utility:create("UIStroke", {
+							Parent = optionText,
+							Color = library.Theme["Text Border"],
+							Thickness = 1,
+							LineJoinMode = Enum.LineJoinMode.Miter
+						})
+						
+						local optionData = {
+							name = optionName,
+							selected = false,
+							button = optionButton,
+							text = optionText
+						}
+						
+						function optionData:Toggle(state)
+							if state then
+								utility:tween(optionData.text, {TextColor3 = library.Theme["Accent"], TextTransparency = 0}, 0.2)
+							else
+								utility:tween(optionData.text, {TextColor3 = library.Theme["Text"], TextTransparency = 0.48}, 0.2)
+							end
+						end
+						
+						optionButton.MouseButton1Down:Connect(function()
+							if dropdown.multi then
+								optionData.selected = not optionData.selected
+								optionData:Toggle(optionData.selected)
+								
+								local index = table.find(dropdown.value, optionName)
+								if index then
+									table.remove(dropdown.value, index)
+								else
+									table.insert(dropdown.value, optionName)
+								end
+								
+								library.flags[dropdown.flag] = dropdown.value
+								dropdown.valueLabel.Text = #dropdown.value > 0 and table.concat(dropdown.value, ", ") or "--"
+								dropdown.callback(dropdown.value)
+							else
+								for _, opt in pairs(dropdown.options) do
+									opt.selected = false
+									opt:Toggle(false)
+								end
+								
+								optionData.selected = true
+								optionData:Toggle(true)
+								dropdown.value = optionName
+								library.flags[dropdown.flag] = dropdown.value
+								dropdown.valueLabel.Text = optionName
+								dropdown.callback(dropdown.value)
+								dropdown:SetOpen(false)
+							end
+						end)
+						
+						dropdown.options[optionName] = optionData
+						return optionData
+					end
+					
+					function dropdown:SetOpen(state)
+						dropdown.isOpen = state
+						dropdown.holder.Visible = state
+						dropdown.icon.Text = state and "-" or "+"
+						dropdown.icon.Position = state and newUDim2(0, -5, 0, -1) or newUDim2(0, -4, 0, -1)
+					end
+					
+					function dropdown:Set(value)
+						if dropdown.multi then
+							if type(value) ~= "table" then return end
+							dropdown.value = value
+							
+							for _, opt in pairs(dropdown.options) do
+								opt.selected = false
+								opt:Toggle(false)
+							end
+							
+							for _, v in pairs(value) do
+								if dropdown.options[v] then
+									dropdown.options[v].selected = true
+									dropdown.options[v]:Toggle(true)
+								end
+							end
+							
+							library.flags[dropdown.flag] = dropdown.value
+							dropdown.valueLabel.Text = #dropdown.value > 0 and table.concat(dropdown.value, ", ") or "--"
+						else
+							if not dropdown.options[value] then return end
+							
+							for _, opt in pairs(dropdown.options) do
+								opt.selected = false
+								opt:Toggle(false)
+							end
+							
+							dropdown.options[value].selected = true
+							dropdown.options[value]:Toggle(true)
+							dropdown.value = value
+							library.flags[dropdown.flag] = dropdown.value
+							dropdown.valueLabel.Text = value
+						end
+						
+						dropdown.callback(dropdown.value)
+					end
+					
+					function dropdown:Get()
+						return dropdown.value
+					end
+				end
+				
+				for _, item in pairs(dropdown.items) do
+					dropdown:AddOption(item)
+				end
+				
+				library.connections[#library.connections + 1] = dropdownButton.InputBegan:Connect(function(input)
+					if input.UserInputType == Enum.UserInputType.MouseButton1 then
+						dropdown:SetOpen(not dropdown.isOpen)
+					end
+				end)
+				
+				if dropdown.default then
+					dropdown:Set(dropdown.default)
+				end
+				
+				return dropdown
 			end
+			
+			return section
+		end
 			
 			window.tabs[#window.tabs + 1] = tab
 			
@@ -1805,6 +2459,16 @@ do
 		Suffix = "px",
 		Callback = function(value)
 			print("Box Thickness:", value)
+		end
+	})
+	
+	healthSection:AddDropdown({
+		Name = "Style",
+		Flag = "HealthBar_Style",
+		Items = {"Bar", "Text", "Both"},
+		Default = "Bar",
+		Callback = function(value)
+			print("Health Style:", value)
 		end
 	})
 	
