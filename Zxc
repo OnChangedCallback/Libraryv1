@@ -202,16 +202,47 @@ function library:CreateWindow(properties)
 			LineJoinMode = Enum.LineJoinMode.Miter
 		})
 		
+		-- inline frame (внутренняя рамка)
+		local inlineFrame = utility:create("Frame", {
+			Name = "InlineFrame",
+			Parent = mainFrame,
+			BackgroundColor3 = library.Theme["Inline"],
+			BorderColor3 = library.Theme["Outline"],
+			BorderSizePixel = 0,
+			Position = newUDim2(0, 7, 0, 20),
+			Size = newUDim2(1, -14, 1, -27),
+			ZIndex = 99
+		})
+		
+		-- inline stroke
+		utility:create("UIStroke", {
+			Parent = inlineFrame,
+			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+			Color = library.Theme["Outline"],
+			Thickness = 1,
+			LineJoinMode = Enum.LineJoinMode.Miter
+		})
+		
+		-- inner border stroke
+		utility:create("UIStroke", {
+			Parent = inlineFrame,
+			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+			Color = library.Theme["Border"],
+			Thickness = 1,
+			LineJoinMode = Enum.LineJoinMode.Miter
+		})
+		
 		-- tabs holder
 		local tabsHolder = utility:create("Frame", {
 			Name = "TabsHolder",
-			Parent = mainFrame,
-			BackgroundColor3 = library.Theme["Background"],
-			BackgroundTransparency = 0,
+			Parent = inlineFrame,
+			BackgroundColor3 = library.Theme["Inline"],
+			BackgroundTransparency = 1,
 			BorderColor3 = fromRGB(0, 0, 0),
 			BorderSizePixel = 0,
-			Position = newUDim2(0, 0, 0.00499999989, 0),
-			Size = newUDim2(0, window.size.X.Offset, 0, 15)
+			Position = newUDim2(0, 7, 0, 7),
+			Size = newUDim2(1, -14, 0, 15),
+			ZIndex = 100
 		})
 		
 		-- list layout
@@ -224,13 +255,14 @@ function library:CreateWindow(properties)
 		-- menu name holder
 		local menuNameHolder = utility:create("Frame", {
 			Name = "MenuNameHolder",
-			Parent = mainFrame,
+			Parent = inlineFrame,
 			BackgroundColor3 = fromRGB(255, 255, 255),
 			BackgroundTransparency = 0.990,
 			BorderColor3 = fromRGB(0, 0, 0),
 			BorderSizePixel = 0,
-			Position = newUDim2(0, 0, 1, -15),
-			Size = newUDim2(1, 0, 0, 15)
+			Position = newUDim2(0, 7, 1, -22),
+			Size = newUDim2(1, -14, 0, 15),
+			ZIndex = 100
 		})
 		
 		-- name text
@@ -263,7 +295,7 @@ function library:CreateWindow(properties)
 			BackgroundTransparency = 0,
 			BorderColor3 = library.Theme["Border"],
 			BorderSizePixel = 0,
-			Position = newUDim2(1.01, 0, 0, 0),
+			Position = newUDim2(1, 7, 0, 0),
 			Size = newUDim2(0, 50, 1, 0),
 			Visible = false,
 			ZIndex = 100
@@ -298,17 +330,47 @@ function library:CreateWindow(properties)
 			LineJoinMode = Enum.LineJoinMode.Miter
 		})
 		
+		-- subtabs inline frame
+		local subTabsInlineFrame = utility:create("Frame", {
+			Name = "SubTabsInlineFrame",
+			Parent = subTabsMainFrame,
+			BackgroundColor3 = library.Theme["Inline"],
+			BorderColor3 = library.Theme["Outline"],
+			BorderSizePixel = 0,
+			Position = newUDim2(0, 7, 0, 20),
+			Size = newUDim2(1, -14, 1, -27),
+			ZIndex = 101
+		})
+		
+		-- subtabs inline stroke
+		utility:create("UIStroke", {
+			Parent = subTabsInlineFrame,
+			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+			Color = library.Theme["Outline"],
+			Thickness = 1,
+			LineJoinMode = Enum.LineJoinMode.Miter
+		})
+		
+		-- subtabs inner border stroke
+		utility:create("UIStroke", {
+			Parent = subTabsInlineFrame,
+			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+			Color = library.Theme["Border"],
+			Thickness = 1,
+			LineJoinMode = Enum.LineJoinMode.Miter
+		})
+		
 		-- subtabs holder (прозрачный контейнер, выровнен с tabs)
 		local subTabsHolder = utility:create("Frame", {
 			Name = "SubTabsHolder",
-			Parent = subTabsMainFrame,
+			Parent = subTabsInlineFrame,
 			BackgroundColor3 = fromRGB(255, 255, 255),
 			BackgroundTransparency = 1,
 			BorderColor3 = fromRGB(0, 0, 0),
 			BorderSizePixel = 0,
-			Position = newUDim2(0, 0, 0.00499999989, 0),
-			Size = newUDim2(1, 0, 1, -2),
-			ZIndex = 101
+			Position = newUDim2(0, 0, 0, 0),
+			Size = newUDim2(1, 0, 1, 0),
+			ZIndex = 102
 		})
 		
 		-- subtabs list layout (вертикальный)
@@ -323,6 +385,7 @@ function library:CreateWindow(properties)
 		-- index
 		window.gui = screenGui
 		window.frame = mainFrame
+		window.inlineFrame = inlineFrame
 		window.tabsHolder = tabsHolder
 		window.subTabsMainFrame = subTabsMainFrame
 		window.subTabsHolder = subTabsHolder
@@ -416,15 +479,15 @@ function library:CreateWindow(properties)
 				-- tab content frame (сдвигаем вправо если есть подвкладки)
 				local tabContent = utility:create("Frame", {
 					Name = "TabContent",
-					Parent = window.frame,
-					BackgroundColor3 = library.Theme["Background"],
-					BackgroundTransparency = 0,
+					Parent = window.inlineFrame,
+					BackgroundColor3 = library.Theme["Inline"],
+					BackgroundTransparency = 1,
 					BorderColor3 = fromRGB(0, 0, 0),
 					BorderSizePixel = 0,
-					Position = newUDim2(0, 0, 0, 17),
-					Size = newUDim2(1, 0, 1, -32),
+					Position = newUDim2(0, 7, 0, 29),
+					Size = newUDim2(1, -14, 1, -51),
 					Visible = false,
-					ZIndex = 99
+					ZIndex = 100
 				})
 				
 				-- columns holder (невидимый контейнер для колонок)
@@ -568,8 +631,8 @@ function library:CreateWindow(properties)
 							Name = "SUBTAB",
 							Parent = window.subTabsHolder,
 							BackgroundColor3 = library.Theme["Background"],
-							BackgroundTransparency = 0,
-							BorderColor3 = library.Theme["Border"],
+							BackgroundTransparency = 1,
+							BorderColor3 = fromRGB(0, 0, 0),
 							BorderSizePixel = 0,
 							Size = newUDim2(0, 50, 0, 15),
 							FontFace = library.Font,
@@ -591,15 +654,15 @@ function library:CreateWindow(properties)
 						-- subtab content frame
 						local subTabContent = utility:create("Frame", {
 							Name = "SubTabContent",
-							Parent = window.frame,
-							BackgroundColor3 = library.Theme["Background"],
-							BackgroundTransparency = 0,
+							Parent = window.inlineFrame,
+							BackgroundColor3 = library.Theme["Inline"],
+							BackgroundTransparency = 1,
 							BorderColor3 = fromRGB(0, 0, 0),
 							BorderSizePixel = 0,
-							Position = newUDim2(0, 0, 0, 17),
-							Size = newUDim2(1, 0, 1, -32),
+							Position = newUDim2(0, 7, 0, 29),
+							Size = newUDim2(1, -14, 1, -51),
 							Visible = false,
-							ZIndex = 99
+							ZIndex = 100
 						})
 						
 						-- columns holder для subtab
