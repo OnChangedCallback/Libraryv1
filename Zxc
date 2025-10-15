@@ -1,0 +1,408 @@
+-- // Variables
+local players = game:GetService("Players")
+local tweenService = game:GetService("TweenService")
+local uis = game:GetService("UserInputService")
+local coregui = game:GetService("CoreGui")
+local httpService = game:GetService("HttpService")
+
+local lp = players.LocalPlayer
+local mouse = lp:GetMouse()
+
+-- math
+local clamp = math.clamp
+local floor = math.floor
+
+-- roblox constructors
+local newUDim2 = UDim2.new
+local newUDim = UDim.new
+local newVector2 = Vector2.new
+local newColor3 = Color3.new
+local fromRGB = Color3.fromRGB
+local newColorSequence = ColorSequence.new
+local newColorSequenceKeypoint = ColorSequenceKeypoint.new
+local newInstance = Instance.new
+
+-- // Library
+local library = {
+	windows = {},
+	connections = {},
+	flags = {},
+	
+	Theme = {
+		["Background"] = fromRGB(27, 27, 27),
+		["Inline"] = fromRGB(20, 20, 25),
+		["Page Background"] = fromRGB(30, 30, 35),
+		["Border"] = fromRGB(10, 10, 10),
+		["Outline"] = fromRGB(27, 27, 32),
+		["Accent"] = fromRGB(165, 58, 255),
+		["Element"] = fromRGB(49, 49, 49),
+		["Hovered Element"] = fromRGB(60, 60, 60),
+		["Text"] = fromRGB(215, 215, 215),
+		["Text Border"] = fromRGB(0, 0, 0)
+	},
+	
+	Folders = {
+		Directory = "UILibrary",
+		Assets = "UILibrary/Assets"
+	},
+	
+	Font = nil
+}
+
+library.__index = library
+
+-- // Utility
+local utility = {}
+
+do -- // Font Setup
+	for _, folderName in library.Folders do
+		if not isfolder(folderName) then
+			makefolder(folderName)
+		end
+	end
+	
+	local fontName = "Windows-XP-Tahoma"
+	local fontPath = library.Folders.Assets .. "/" .. fontName
+	
+	if not isfile(fontPath .. ".json") then
+		if not isfile(fontPath .. ".ttf") then
+			writefile(fontPath .. ".ttf", game:HttpGet("https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/windows-xp-tahoma.ttf"))
+		end
+		
+		local fontData = {
+			name = fontName,
+			faces = {{
+				name = "Regular",
+				weight = 200,
+				style = "Regular",
+				assetId = getcustomasset(fontPath .. ".ttf")
+			}}
+		}
+		
+		writefile(fontPath .. ".json", httpService:JSONEncode(fontData))
+	end
+	
+	library.Font = Font.new(getcustomasset(fontPath .. ".json"))
+end
+
+do -- // Utility Functions
+	function utility:create(className, properties)
+		local instance = newInstance(className)
+		
+		for property, value in pairs(properties) do
+			instance[property] = value
+		end
+		
+		return instance
+	end
+	
+	function utility:tween(object, properties, duration, easingStyle)
+		local tweenInfo = TweenInfo.new(
+			duration or 0.2,
+			easingStyle or Enum.EasingStyle.Quad,
+			Enum.EasingDirection.Out
+		)
+		
+		local tween = tweenService:Create(object, tweenInfo, properties)
+		tween:Play()
+		
+		return tween
+	end
+	
+	function utility:draggify(frame)
+		local dragging = false
+		local dragStart = nil
+		local startPos = nil
+		
+		frame.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				dragging = true
+				dragStart = input.Position
+				startPos = frame.Position
+			end
+		end)
+		
+		frame.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				dragging = false
+			end
+		end)
+		
+		uis.InputChanged:Connect(function(input)
+			if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+				local delta = input.Position - dragStart
+				frame.Position = newUDim2(
+					startPos.X.Scale,
+					startPos.X.Offset + delta.X,
+					startPos.Y.Scale,
+					startPos.Y.Offset + delta.Y
+				)
+			end
+		end)
+	end
+end
+
+-- // Library Functions
+function library:CreateWindow(properties)
+	properties = properties or {}
+	
+	local window = {
+		name = properties.Name or "UI Library",
+		size = properties.Size or newUDim2(0, 600, 0, 400),
+		tabs = {},
+		currentTab = nil
+	}
+	
+	do -- // Window UI
+		-- screengui
+		local screenGui = utility:create("ScreenGui", {
+			Name = "MainScreenGUI",
+			Parent = coregui,
+			ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+		})
+		
+		-- mainframe
+		local mainFrame = utility:create("Frame", {
+			Name = "MainFrame",
+			Parent = screenGui,
+			BackgroundColor3 = library.Theme["Background"],
+			BorderColor3 = library.Theme["Border"],
+			BorderSizePixel = 0,
+			Position = newUDim2(0.257073551, 0, 0.152512997, 0),
+			Size = window.size,
+			ZIndex = 99
+		})
+		
+		-- mainframe stroke
+		utility:create("UIStroke", {
+			Parent = mainFrame,
+			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+			Color = library.Theme["Border"],
+			Thickness = 1,
+			LineJoinMode = Enum.LineJoinMode.Miter
+		})
+		
+		-- top accent line
+		local topAccentLine = utility:create("Frame", {
+			Name = "TopAccentLine",
+			Parent = mainFrame,
+			BackgroundColor3 = library.Theme["Accent"],
+			BorderColor3 = fromRGB(0, 0, 0),
+			BorderSizePixel = 0,
+			Size = newUDim2(0, window.size.X.Offset, 0, 2),
+			ZIndex = 100
+		})
+		
+		-- uistroke for accent line
+		utility:create("UIStroke", {
+			Parent = topAccentLine,
+			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+			Color = library.Theme["Border"],
+			Thickness = 1,
+			LineJoinMode = Enum.LineJoinMode.Miter
+		})
+		
+		-- tabs holder
+		local tabsHolder = utility:create("Frame", {
+			Name = "TabsHolder",
+			Parent = mainFrame,
+			BackgroundColor3 = library.Theme["Background"],
+			BackgroundTransparency = 0,
+			BorderColor3 = fromRGB(0, 0, 0),
+			BorderSizePixel = 0,
+			Position = newUDim2(0, 0, 0.00499999989, 0),
+			Size = newUDim2(0, window.size.X.Offset, 0, 15)
+		})
+		
+		-- list layout
+		local listLayout = utility:create("UIListLayout", {
+			Parent = tabsHolder,
+			FillDirection = Enum.FillDirection.Horizontal,
+			SortOrder = Enum.SortOrder.LayoutOrder
+		})
+		
+		-- menu name holder
+		local menuNameHolder = utility:create("Frame", {
+			Name = "MenuNameHolder",
+			Parent = mainFrame,
+			BackgroundColor3 = fromRGB(255, 255, 255),
+			BackgroundTransparency = 0.990,
+			BorderColor3 = fromRGB(0, 0, 0),
+			BorderSizePixel = 0,
+			Position = newUDim2(0, 0, 0.962499976, 0),
+			Size = newUDim2(0, window.size.X.Offset, 0, 15)
+		})
+		
+		-- name text
+		local nameText = utility:create("TextLabel", {
+			Name = "NameText",
+			Parent = menuNameHolder,
+			BackgroundColor3 = fromRGB(255, 255, 255),
+			BackgroundTransparency = 1.000,
+			BorderColor3 = fromRGB(0, 0, 0),
+			BorderSizePixel = 0,
+			Size = newUDim2(0, window.size.X.Offset, 0, 15),
+			FontFace = library.Font,
+			Text = window.name,
+			TextColor3 = library.Theme["Text"],
+			TextSize = 12
+		})
+		
+		-- text stroke
+		utility:create("UIStroke", {
+			Parent = nameText,
+			Color = library.Theme["Text Border"],
+			Thickness = 1
+		})
+		
+		-- index
+		window.gui = screenGui
+		window.frame = mainFrame
+		window.tabsHolder = tabsHolder
+		window.nameText = nameText
+		
+		-- draggable
+		utility:draggify(mainFrame)
+	end
+	
+	do -- // Window Functions
+		function window:SetTab(tab)
+			for _, t in pairs(window.tabs) do
+				if t.open and t ~= tab then
+					t:Set(false)
+				end
+			end
+			
+			window.currentTab = tab
+		end
+		
+		function window:CreateTab(properties)
+			properties = properties or {}
+			
+			local tab = {
+				text = properties.Text or "Tab",
+				open = false,
+				window = window
+			}
+			
+			do -- // Tab UI
+				-- tab button
+				local tabButton = utility:create("TextButton", {
+					Name = "TAB",
+					Parent = window.tabsHolder,
+					BackgroundColor3 = library.Theme["Background"],
+					BackgroundTransparency = 1,
+					BorderColor3 = fromRGB(0, 0, 0),
+					BorderSizePixel = 0,
+					Size = newUDim2(0, 50, 0, 15),
+					FontFace = library.Font,
+					Text = tab.text,
+					TextColor3 = library.Theme["Text"],
+					TextSize = 12,
+					TextWrapped = true
+				})
+				
+				-- text stroke
+				utility:create("UIStroke", {
+					Parent = tabButton,
+					Color = library.Theme["Text Border"],
+					Thickness = 1
+				})
+				
+				-- tab content frame
+				local tabContent = utility:create("Frame", {
+					Name = "TabContent",
+					Parent = window.frame,
+					BackgroundColor3 = library.Theme["Background"],
+					BackgroundTransparency = 0,
+					BorderColor3 = fromRGB(0, 0, 0),
+					BorderSizePixel = 0,
+					Position = newUDim2(0, 0, 0, 17),
+					Size = newUDim2(1, 0, 1, -32),
+					Visible = false,
+					ZIndex = 99
+				})
+				
+				-- index
+				tab.button = tabButton
+				tab.content = tabContent
+				
+				-- button logic
+				tabButton.MouseButton1Click:Connect(function()
+					if not tab.open then
+						tab:Set(true)
+					end
+				end)
+				
+				-- hover effects
+				tabButton.MouseEnter:Connect(function()
+					if not tab.open then
+						utility:tween(tabButton, {TextColor3 = library.Theme["Hovered Element"]}, 0.15)
+					end
+				end)
+				
+				tabButton.MouseLeave:Connect(function()
+					if not tab.open then
+						utility:tween(tabButton, {TextColor3 = library.Theme["Text"]}, 0.15)
+					end
+				end)
+			end
+			
+			do -- // Tab Functions
+				function tab:Set(state)
+					tab.open = state
+					
+					-- update visibility
+					tab.content.Visible = tab.open
+					
+					-- update text colors
+					if tab.open then
+						utility:tween(tab.button, {TextColor3 = library.Theme["Accent"]}, 0.2)
+						window:SetTab(tab)
+					else
+						utility:tween(tab.button, {TextColor3 = library.Theme["Text"]}, 0.2)
+					end
+				end
+			end
+			
+			-- auto open first tab
+			if #window.tabs == 0 then
+				tab:Set(true)
+			end
+			
+			window.tabs[#window.tabs + 1] = tab
+			
+			return tab
+		 end
+	end
+	
+	library.windows[#library.windows + 1] = window
+	
+	return setmetatable(window, library)
+end
+
+-- // Example Usage
+do
+	-- создаем окно
+	local window = library:CreateWindow({
+		Name = "typescript",
+		Size = UDim2.new(0, 600, 0, 400)
+	})
+	
+	-- создаем вкладки
+	local aimbotTab = window:CreateTab({
+		Text = "Aimbot"
+	})
+	
+	local visualsTab = window:CreateTab({
+		Text = "Visuals"
+	})
+	
+	local miscTab = window:CreateTab({
+		Text = "Misc"
+	})
+	
+	local settingsTab = window:CreateTab({
+		Text = "Settings"
+	})
+end
