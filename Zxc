@@ -30,10 +30,10 @@ local library = {
 	
 	Theme = {
 		["Background"] = fromRGB(27, 27, 27),
-		["Inline"] = fromRGB(20, 20, 25),
-		["Page Background"] = fromRGB(30, 30, 35),
+		["Inline"] = fromRGB(20, 20, 20),
+		["Page Background"] = fromRGB(22, 22, 22),
 		["Border"] = fromRGB(10, 10, 10),
-		["Outline"] = fromRGB(27, 27, 32),
+		["Outline"] = fromRGB(27, 27, 27),
 		["Accent"] = fromRGB(165, 58, 255),
 		["Element"] = fromRGB(49, 49, 49),
 		["Hovered Element"] = fromRGB(60, 60, 60),
@@ -229,8 +229,8 @@ function library:CreateWindow(properties)
 			BackgroundTransparency = 0.990,
 			BorderColor3 = fromRGB(0, 0, 0),
 			BorderSizePixel = 0,
-			Position = newUDim2(0, 0, 0.962499976, 0),
-			Size = newUDim2(0, window.size.X.Offset, 0, 15)
+			Position = newUDim2(0, 0, 1, -15),
+			Size = newUDim2(1, 0, 0, 15)
 		})
 		
 		-- name text
@@ -241,7 +241,7 @@ function library:CreateWindow(properties)
 			BackgroundTransparency = 1.000,
 			BorderColor3 = fromRGB(0, 0, 0),
 			BorderSizePixel = 0,
-			Size = newUDim2(0, window.size.X.Offset, 0, 15),
+			Size = newUDim2(1, 0, 1, 0),
 			FontFace = library.Font,
 			Text = window.name,
 			TextColor3 = library.Theme["Text"],
@@ -383,7 +383,10 @@ function library:CreateWindow(properties)
 				open = false,
 				window = window,
 				subtabs = {},
-				currentSubTab = nil
+				currentSubTab = nil,
+				columns = properties.Columns or 2,
+				columnsData = {},
+				sections = {}
 			}
 			
 			do -- // Tab UI
@@ -424,9 +427,83 @@ function library:CreateWindow(properties)
 					ZIndex = 99
 				})
 				
+				-- columns holder (невидимый контейнер для колонок)
+				local columnsHolder = utility:create("Frame", {
+					Name = "ColumnsHolder",
+					Parent = tabContent,
+					BackgroundColor3 = fromRGB(255, 255, 255),
+					BackgroundTransparency = 1,
+					BorderColor3 = fromRGB(0, 0, 0),
+					BorderSizePixel = 0,
+					Position = newUDim2(0, 0, 0, 0),
+					Size = newUDim2(1, 0, 1, 0),
+					ZIndex = 100
+				})
+				
+				-- uigridlayout для колонок
+				utility:create("UIGridLayout", {
+					Parent = columnsHolder,
+					CellPadding = newUDim2(0, 8, 0, 0),
+					CellSize = newUDim2(1 / tab.columns, -8 * (tab.columns - 1) / tab.columns, 1, 0),
+					FillDirection = Enum.FillDirection.Horizontal,
+					SortOrder = Enum.SortOrder.LayoutOrder
+				})
+				
+				-- padding для columns holder
+				utility:create("UIPadding", {
+					Parent = columnsHolder,
+					PaddingTop = newUDim(0, 6),
+					PaddingBottom = newUDim(0, 6),
+					PaddingLeft = newUDim(0, 6),
+					PaddingRight = newUDim(0, 6)
+				})
+				
+				-- создаем колонки
+				for i = 1, tab.columns do
+					local column = utility:create("ScrollingFrame", {
+						Name = "Column" .. i,
+						Parent = columnsHolder,
+						Active = true,
+						BackgroundColor3 = library.Theme["Background"],
+						BackgroundTransparency = 1,
+						BorderColor3 = fromRGB(0, 0, 0),
+						BorderSizePixel = 0,
+						ScrollBarThickness = 2,
+						ScrollBarImageColor3 = library.Theme["Accent"],
+						CanvasSize = newUDim2(0, 0, 0, 0),
+						ZIndex = 101,
+						ScrollingDirection = Enum.ScrollingDirection.Y,
+						VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar
+					})
+					
+					-- uilistlayout для секций в колонке
+					local listLayout = utility:create("UIListLayout", {
+						Parent = column,
+						Padding = newUDim(0, 8),
+						SortOrder = Enum.SortOrder.LayoutOrder
+					})
+					
+					-- padding для колонки
+					utility:create("UIPadding", {
+						Parent = column,
+						PaddingTop = newUDim(0, 0),
+						PaddingBottom = newUDim(0, 6),
+						PaddingLeft = newUDim(0, 0),
+						PaddingRight = newUDim(0, 6)
+					})
+					
+					-- авторазмер canvas
+					listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+						column.CanvasSize = newUDim2(0, 0, 0, listLayout.AbsoluteContentSize.Y + 6)
+					end)
+					
+					tab.columnsData[i] = column
+				end
+				
 				-- index
 				tab.button = tabButton
 				tab.content = tabContent
+				tab.columnsHolder = columnsHolder
 				
 				-- button logic
 				tabButton.MouseButton1Click:Connect(function()
@@ -479,7 +556,10 @@ function library:CreateWindow(properties)
 						text = properties.Text or "SubTab",
 						open = false,
 						tab = tab,
-						window = window
+						window = window,
+						columns = properties.Columns or 2,
+						columnsData = {},
+						sections = {}
 					}
 					
 					do -- // SubTab UI
@@ -522,9 +602,80 @@ function library:CreateWindow(properties)
 							ZIndex = 99
 						})
 						
+						-- columns holder для subtab
+						local subColumnsHolder = utility:create("Frame", {
+							Name = "ColumnsHolder",
+							Parent = subTabContent,
+							BackgroundColor3 = fromRGB(255, 255, 255),
+							BackgroundTransparency = 1,
+							BorderColor3 = fromRGB(0, 0, 0),
+							BorderSizePixel = 0,
+							Position = newUDim2(0, 0, 0, 0),
+							Size = newUDim2(1, 0, 1, 0),
+							ZIndex = 100
+						})
+						
+						-- uigridlayout
+						utility:create("UIGridLayout", {
+							Parent = subColumnsHolder,
+							CellPadding = newUDim2(0, 8, 0, 0),
+							CellSize = newUDim2(1 / subtab.columns, -8 * (subtab.columns - 1) / subtab.columns, 1, 0),
+							FillDirection = Enum.FillDirection.Horizontal,
+							SortOrder = Enum.SortOrder.LayoutOrder
+						})
+						
+						-- padding
+						utility:create("UIPadding", {
+							Parent = subColumnsHolder,
+							PaddingTop = newUDim(0, 6),
+							PaddingBottom = newUDim(0, 6),
+							PaddingLeft = newUDim(0, 6),
+							PaddingRight = newUDim(0, 6)
+						})
+						
+						-- создаем колонки для subtab
+						for i = 1, subtab.columns do
+							local column = utility:create("ScrollingFrame", {
+								Name = "Column" .. i,
+								Parent = subColumnsHolder,
+								Active = true,
+								BackgroundColor3 = library.Theme["Background"],
+								BackgroundTransparency = 1,
+								BorderColor3 = fromRGB(0, 0, 0),
+								BorderSizePixel = 0,
+								ScrollBarThickness = 2,
+								ScrollBarImageColor3 = library.Theme["Accent"],
+								CanvasSize = newUDim2(0, 0, 0, 0),
+								ZIndex = 101,
+								ScrollingDirection = Enum.ScrollingDirection.Y,
+								VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar
+							})
+							
+							local listLayout = utility:create("UIListLayout", {
+								Parent = column,
+								Padding = newUDim(0, 8),
+								SortOrder = Enum.SortOrder.LayoutOrder
+							})
+							
+							utility:create("UIPadding", {
+								Parent = column,
+								PaddingTop = newUDim(0, 0),
+								PaddingBottom = newUDim(0, 6),
+								PaddingLeft = newUDim(0, 0),
+								PaddingRight = newUDim(0, 6)
+							})
+							
+							listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+								column.CanvasSize = newUDim2(0, 0, 0, listLayout.AbsoluteContentSize.Y + 6)
+							end)
+							
+							subtab.columnsData[i] = column
+						 end
+						
 						-- index
 						subtab.button = subTabButton
 						subtab.content = subTabContent
+						subtab.columnsHolder = subColumnsHolder
 						
 						-- button logic
 						subTabButton.MouseButton1Click:Connect(function()
@@ -571,12 +722,260 @@ function library:CreateWindow(properties)
 								utility:tween(subtab.button, {TextColor3 = library.Theme["Text"]}, 0.2)
 							end
 						end
+						
+						function subtab:CreateSection(properties)
+							properties = properties or {}
+							
+							local section = {
+								name = properties.Name or "Section",
+								side = properties.Side or 1,
+								subtab = subtab
+							}
+							
+							do -- // Section UI
+								local sectionFrame = utility:create("Frame", {
+									Name = "Section",
+									Parent = subtab.columnsData[section.side],
+									BackgroundColor3 = library.Theme["Inline"],
+									BackgroundTransparency = 0,
+									BorderColor3 = fromRGB(0, 0, 0),
+									BorderSizePixel = 0,
+									Size = newUDim2(1, 0, 0, 0),
+									AutomaticSize = Enum.AutomaticSize.Y,
+									ZIndex = 102
+								})
+								
+								-- section outline
+								utility:create("UIStroke", {
+									Parent = sectionFrame,
+									ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+									Color = library.Theme["Outline"],
+									Thickness = 1,
+									LineJoinMode = Enum.LineJoinMode.Miter
+								})
+								
+								-- section background
+								local sectionBackground = utility:create("Frame", {
+									Name = "Background",
+									Parent = sectionFrame,
+									BackgroundColor3 = library.Theme["Page Background"],
+									BackgroundTransparency = 0,
+									BorderColor3 = fromRGB(0, 0, 0),
+									BorderSizePixel = 0,
+									Position = newUDim2(0, 1, 0, 1),
+									Size = newUDim2(1, -2, 1, -2),
+									ZIndex = 102
+								})
+								
+								-- section text
+								local sectionText = utility:create("TextLabel", {
+									Name = "Title",
+									Parent = sectionBackground,
+									BackgroundTransparency = 1,
+									BorderColor3 = fromRGB(0, 0, 0),
+									BorderSizePixel = 0,
+									Position = newUDim2(0, 6, 0, 4),
+									AutomaticSize = Enum.AutomaticSize.XY,
+									FontFace = library.Font,
+									Text = section.name,
+									TextColor3 = library.Theme["Text"],
+									TextSize = 12,
+									ZIndex = 103
+								})
+								
+								-- text stroke
+								utility:create("UIStroke", {
+									Parent = sectionText,
+									Color = library.Theme["Text Border"],
+									Thickness = 1,
+									LineJoinMode = Enum.LineJoinMode.Miter
+								})
+								
+								-- accent line
+								local accentLine = utility:create("Frame", {
+									Name = "AccentLine",
+									Parent = sectionBackground,
+									BackgroundColor3 = library.Theme["Accent"],
+									BorderColor3 = fromRGB(0, 0, 0),
+									BorderSizePixel = 0,
+									Size = newUDim2(1, 0, 0, 2),
+									ZIndex = 103
+								})
+								
+								-- elements container
+								local elementsContainer = utility:create("Frame", {
+									Name = "Elements",
+									Parent = sectionBackground,
+									BackgroundTransparency = 1,
+									BorderColor3 = fromRGB(0, 0, 0),
+									BorderSizePixel = 0,
+									Position = newUDim2(0, 0, 0, 20),
+									Size = newUDim2(1, 0, 1, -20),
+									AutomaticSize = Enum.AutomaticSize.Y,
+									ZIndex = 102
+								})
+								
+								-- uilistlayout
+								utility:create("UIListLayout", {
+									Parent = elementsContainer,
+									Padding = newUDim(0, 4),
+									HorizontalAlignment = Enum.HorizontalAlignment.Center,
+									SortOrder = Enum.SortOrder.LayoutOrder
+								})
+								
+								-- padding
+								utility:create("UIPadding", {
+									Parent = elementsContainer,
+									PaddingTop = newUDim(0, 4),
+									PaddingBottom = newUDim(0, 4),
+									PaddingLeft = newUDim(0, 4),
+									PaddingRight = newUDim(0, 4)
+								})
+								
+								-- index
+								section.frame = sectionFrame
+								section.background = sectionBackground
+								section.container = elementsContainer
+								section.text = sectionText
+							end
+							
+							subtab.sections[#subtab.sections + 1] = section
+							
+							return section
+						end
 					end
 					
 					tab.subtabs[#tab.subtabs + 1] = subtab
 					
 					return subtab
 				end
+			end
+			
+			-- CreateSection для Tab (только если нет subtabs)
+			function tab:CreateSection(properties)
+				if #tab.subtabs > 0 then
+					error("Cannot create section in tab with subtabs. Use subtab:CreateSection() instead.")
+					return
+				end
+				
+				properties = properties or {}
+				
+				local section = {
+					name = properties.Name or "Section",
+					side = properties.Side or 1,
+					tab = tab
+				}
+				
+				do -- // Section UI
+					local sectionFrame = utility:create("Frame", {
+						Name = "Section",
+						Parent = tab.columnsData[section.side],
+						BackgroundColor3 = library.Theme["Inline"],
+						BackgroundTransparency = 0,
+						BorderColor3 = fromRGB(0, 0, 0),
+						BorderSizePixel = 0,
+						Size = newUDim2(1, 0, 0, 0),
+						AutomaticSize = Enum.AutomaticSize.Y,
+						ZIndex = 102
+					})
+					
+					-- section outline
+					utility:create("UIStroke", {
+						Parent = sectionFrame,
+						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+						Color = library.Theme["Outline"],
+						Thickness = 1,
+						LineJoinMode = Enum.LineJoinMode.Miter
+					})
+					
+					-- section background
+					local sectionBackground = utility:create("Frame", {
+						Name = "Background",
+						Parent = sectionFrame,
+						BackgroundColor3 = library.Theme["Page Background"],
+						BackgroundTransparency = 0,
+						BorderColor3 = fromRGB(0, 0, 0),
+						BorderSizePixel = 0,
+						Position = newUDim2(0, 1, 0, 1),
+						Size = newUDim2(1, -2, 1, -2),
+						ZIndex = 102
+					})
+					
+					-- section text
+					local sectionText = utility:create("TextLabel", {
+						Name = "Title",
+						Parent = sectionBackground,
+						BackgroundTransparency = 1,
+						BorderColor3 = fromRGB(0, 0, 0),
+						BorderSizePixel = 0,
+						Position = newUDim2(0, 6, 0, 4),
+						AutomaticSize = Enum.AutomaticSize.XY,
+						FontFace = library.Font,
+						Text = section.name,
+						TextColor3 = library.Theme["Text"],
+						TextSize = 12,
+						ZIndex = 103
+					})
+					
+					-- text stroke
+					utility:create("UIStroke", {
+						Parent = sectionText,
+						Color = library.Theme["Text Border"],
+						Thickness = 1,
+						LineJoinMode = Enum.LineJoinMode.Miter
+					})
+					
+					-- accent line
+					local accentLine = utility:create("Frame", {
+						Name = "AccentLine",
+						Parent = sectionBackground,
+						BackgroundColor3 = library.Theme["Accent"],
+						BorderColor3 = fromRGB(0, 0, 0),
+						BorderSizePixel = 0,
+						Size = newUDim2(1, 0, 0, 2),
+						ZIndex = 103
+					})
+					
+					-- elements container
+					local elementsContainer = utility:create("Frame", {
+						Name = "Elements",
+						Parent = sectionBackground,
+						BackgroundTransparency = 1,
+						BorderColor3 = fromRGB(0, 0, 0),
+						BorderSizePixel = 0,
+						Position = newUDim2(0, 0, 0, 20),
+						Size = newUDim2(1, 0, 1, -20),
+						AutomaticSize = Enum.AutomaticSize.Y,
+						ZIndex = 102
+					})
+					
+					-- uilistlayout
+					utility:create("UIListLayout", {
+						Parent = elementsContainer,
+						Padding = newUDim(0, 4),
+						HorizontalAlignment = Enum.HorizontalAlignment.Center,
+						SortOrder = Enum.SortOrder.LayoutOrder
+					})
+					
+					-- padding
+					utility:create("UIPadding", {
+						Parent = elementsContainer,
+						PaddingTop = newUDim(0, 4),
+						PaddingBottom = newUDim(0, 4),
+						PaddingLeft = newUDim(0, 4),
+						PaddingRight = newUDim(0, 4)
+					})
+					
+					-- index
+					section.frame = sectionFrame
+					section.background = sectionBackground
+					section.container = elementsContainer
+					section.text = sectionText
+				end
+				
+				tab.sections[#tab.sections + 1] = section
+				
+				return section
 			end
 			
 			window.tabs[#window.tabs + 1] = tab
@@ -609,22 +1008,54 @@ do
 	
 	-- создаем подвкладки для Visuals
 	local espSubTab = visualsTab:CreateSubTab({
-		Text = "ESP"
+		Text = "ESP",
+		Columns = 3
 	})
 	
 	local worldSubTab = visualsTab:CreateSubTab({
-		Text = "World"
+		Text = "World",
+		Columns = 2
 	})
 	
 	local miscSubTab = visualsTab:CreateSubTab({
-		Text = "Misc"
+		Text = "Misc",
+		Columns = 2
+	})
+	
+	-- создаем секции для подвкладок
+	local boxSection = espSubTab:CreateSection({
+		Name = "Box ESP",
+		Side = 1
+	})
+	
+	local healthSection = espSubTab:CreateSection({
+		Name = "Health Bar",
+		Side = 1
+	})
+	
+	local chamsSection = espSubTab:CreateSection({
+		Name = "Chams",
+		Side = 2
 	})
 	
 	local miscTab = window:CreateTab({
-		Text = "Misc"
+		Text = "Misc",
+		Columns = 2
+	})
+	
+	-- создаем секцию для таба без подвкладок
+	local movementSection = miscTab:CreateSection({
+		Name = "Movement",
+		Side = 1
+	})
+	
+	local utilitySection = miscTab:CreateSection({
+		Name = "Utility",
+		Side = 2
 	})
 	
 	local settingsTab = window:CreateTab({
-		Text = "Settings"
+		Text = "Settings",
+		Columns = 1
 	})
 end
