@@ -25,6 +25,7 @@ local newColorSequenceKeypoint = ColorSequenceKeypoint.new
 local newNumberSequence = NumberSequence.new
 local newNumberSequenceKeypoint = NumberSequenceKeypoint.new
 local newInstance = Instance.new
+local newRect = Rect.new
 
 -- // Library
 local library = {
@@ -1190,16 +1191,18 @@ function library:CreateWindow(properties)
 									local colorpickerWindow, paletteFrame, palettePicker, hueFrame, huePicker, alphaFrame, alphaPicker
 									
 									do -- // Colorpicker Window
-										colorpickerWindow = utility:create("Frame", {
+										colorpickerWindow = utility:create("TextButton", {
 											Name = "ColorpickerWindow",
 											Parent = toggle.section.window.screenGui,
 											BackgroundColor3 = library.Theme["Background"],
 											BorderColor3 = fromRGB(0, 0, 0),
 											BorderSizePixel = 0,
 											Position = newUDim2(0, 0, 0, 0),
-											Size = newUDim2(0, 200, 0, 150),
+											Size = newUDim2(0, 200, 0, 190),
 											Visible = false,
-											ZIndex = 200
+											ZIndex = 200,
+											AutoButtonColor = false,
+											Text = ""
 										})
 										
 										-- outline
@@ -1209,6 +1212,22 @@ function library:CreateWindow(properties)
 											Color = library.Theme["Outline"],
 											Thickness = 1,
 											LineJoinMode = Enum.LineJoinMode.Miter
+										})
+										
+										-- тень для окна (не перехватывает клики)
+										local shadowFrame = utility:create("ImageLabel", {
+											Name = "Shadow",
+											Parent = colorpickerWindow,
+											Image = "rbxassetid://5554236805",
+											ImageColor3 = library.Theme["Border"],
+											ImageTransparency = 0.5,
+											ScaleType = Enum.ScaleType.Slice,
+											SliceCenter = newRect(23, 23, 277, 277),
+											AnchorPoint = newVector2(0.5, 0.5),
+											Position = newUDim2(0.5, 0, 0.5, 0),
+											Size = newUDim2(1, 20, 1, 20),
+											ZIndex = 199,
+											BackgroundTransparency = 1
 										})
 										
 										
@@ -1424,6 +1443,56 @@ function library:CreateWindow(properties)
 											LineJoinMode = Enum.LineJoinMode.Miter
 										})
 										
+										-- RGB textbox
+										local rgbBox = utility:create("TextBox", {
+											Name = "RGBBox",
+											Parent = colorpickerWindow,
+											BackgroundColor3 = library.Theme["Element"],
+											BorderSizePixel = 0,
+											Position = newUDim2(0.05, 0, 0.78, 0),
+											Size = newUDim2(0, 90, 0, 18),
+											Font = Enum.Font.Code,
+											Text = "255, 255, 255",
+											TextColor3 = library.Theme["Text"],
+											TextSize = 12,
+											TextXAlignment = Enum.TextXAlignment.Center,
+											ZIndex = 201,
+											ClearTextOnFocus = false
+										})
+										
+										utility:create("UIStroke", {
+											Parent = rgbBox,
+											ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+											Color = library.Theme["Outline"],
+											Thickness = 1,
+											LineJoinMode = Enum.LineJoinMode.Miter
+										})
+										
+										-- HEX textbox
+										local hexBox = utility:create("TextBox", {
+											Name = "HEXBox",
+											Parent = colorpickerWindow,
+											BackgroundColor3 = library.Theme["Element"],
+											BorderSizePixel = 0,
+											Position = newUDim2(0.525, 0, 0.78, 0),
+											Size = newUDim2(0, 85, 0, 18),
+											Font = Enum.Font.Code,
+											Text = "#FFFFFF",
+											TextColor3 = library.Theme["Text"],
+											TextSize = 12,
+											TextXAlignment = Enum.TextXAlignment.Center,
+											ZIndex = 201,
+											ClearTextOnFocus = false
+										})
+										
+										utility:create("UIStroke", {
+											Parent = hexBox,
+											ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+											Color = library.Theme["Outline"],
+											Thickness = 1,
+											LineJoinMode = Enum.LineJoinMode.Miter
+										})
+										
 										-- сохраняем ссылки
 									colorpicker.button = colorButton
 									colorpicker.buttonFrame = colorButtonFrame
@@ -1435,6 +1504,40 @@ function library:CreateWindow(properties)
 									colorpicker.alphaFrame = alphaFrame
 									colorpicker.alphaColorFrame = alphaColorFrame
 									colorpicker.alphaPicker = alphaPicker
+									colorpicker.rgbBox = rgbBox
+									colorpicker.hexBox = hexBox
+								end
+								
+								-- dragging для colorpicker окна
+								do
+									local dragging = false
+									local dragStart = nil
+									local startPos = nil
+									
+									-- dragging за основное окно
+									library.connections[#library.connections + 1] = colorpickerWindow.MouseButton1Down:Connect(function()
+										dragging = true
+										dragStart = uis:GetMouseLocation() - guiService:GetGuiInset()
+										startPos = colorpickerWindow.Position
+									end)
+									
+									library.connections[#library.connections + 1] = uis.InputChanged:Connect(function(input)
+										if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+											local mousePos = uis:GetMouseLocation() - guiService:GetGuiInset()
+											local delta = mousePos - dragStart
+											
+											colorpickerWindow.Position = newUDim2(
+												startPos.X.Scale, startPos.X.Offset + delta.X,
+												startPos.Y.Scale, startPos.Y.Offset + delta.Y
+											)
+										end
+									end)
+									
+									library.connections[#library.connections + 1] = uis.InputEnded:Connect(function(input)
+										if input.UserInputType == Enum.UserInputType.MouseButton1 then
+											dragging = false
+										end
+									end)
 								end
 								
 								-- HSV utility functions
@@ -1455,7 +1558,19 @@ function library:CreateWindow(properties)
 									-- обновляем позицию пикеров
 									palettePicker.Position = newUDim2(colorpicker.saturation, -1, colorpicker.value, -1)
 									huePicker.Position = newUDim2(0, -1, colorpicker.hue, -1)
-									alphaPicker.Position = newUDim2(0, -1, 1 - colorpicker.alpha, -1)
+									alphaPicker.Position = newUDim2(0, -1, colorpicker.alpha, -1)
+									
+									-- обновляем textbox'ы (только если не в фокусе)
+									if not colorpicker.rgbBox:IsFocused() then
+										local r = floor(colorpicker.color.R * 255)
+										local g = floor(colorpicker.color.G * 255)
+										local b = floor(colorpicker.color.B * 255)
+										colorpicker.rgbBox.Text = r .. ", " .. g .. ", " .. b
+									end
+									
+									if not colorpicker.hexBox:IsFocused() then
+										colorpicker.hexBox.Text = "#" .. colorpicker.color:ToHex()
+									end
 									
 									-- сохраняем в флаги
 									library.flags[colorpicker.flag] = {
@@ -1540,7 +1655,7 @@ function library:CreateWindow(properties)
 											local alphaSize = alphaFrame.AbsoluteSize
 											
 											local relativeY = clamp((mousePos.Y - alphaPos.Y) / alphaSize.Y, 0, 1)
-											colorpicker.alpha = 1 - relativeY
+											colorpicker.alpha = relativeY
 											
 											updateColorFromHSV()
 										end
@@ -1551,6 +1666,49 @@ function library:CreateWindow(properties)
 									if input.UserInputType == Enum.UserInputType.MouseButton1 and alphaConnection then
 										alphaConnection:Disconnect()
 										alphaConnection = nil
+									end
+								end)
+								
+								-- RGB textbox обработчик
+								library.connections[#library.connections + 1] = colorpicker.rgbBox.FocusLost:Connect(function()
+									local text = colorpicker.rgbBox.Text
+									local r, g, b = text:match("(%d+)%s*,%s*(%d+)%s*,%s*(%d+)")
+									
+									if r and g and b then
+										r = clamp(tonumber(r) or 0, 0, 255)
+										g = clamp(tonumber(g) or 0, 0, 255)
+										b = clamp(tonumber(b) or 0, 0, 255)
+										
+										colorpicker.color = fromRGB(r, g, b)
+										colorpicker.hue, colorpicker.saturation, colorpicker.value = colorpicker.color:ToHSV()
+										
+										updateColorFromHSV()
+									end
+								end)
+								
+								-- HEX textbox обработчик
+								library.connections[#library.connections + 1] = colorpicker.hexBox.FocusLost:Connect(function()
+									local text = colorpicker.hexBox.Text
+									
+									-- убираем # если есть
+									text = text:gsub("#", "")
+									
+									-- проверяем что это валидный hex (6 символов)
+									if #text == 6 and text:match("^%x+$") then
+										local success, color = pcall(function()
+											return fromRGB(
+												tonumber(text:sub(1, 2), 16),
+												tonumber(text:sub(3, 4), 16),
+												tonumber(text:sub(5, 6), 16)
+											)
+										end)
+										
+										if success then
+											colorpicker.color = color
+											colorpicker.hue, colorpicker.saturation, colorpicker.value = colorpicker.color:ToHSV()
+											
+											updateColorFromHSV()
+										end
 									end
 								end)
 									
