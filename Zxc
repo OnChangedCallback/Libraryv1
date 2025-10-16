@@ -2,6 +2,7 @@
 local players = game:GetService("Players")
 local tweenService = game:GetService("TweenService")
 local uis = game:GetService("UserInputService")
+local guiService = game:GetService("GuiService")
 local coregui = game:GetService("CoreGui")
 local httpService = game:GetService("HttpService")
 
@@ -1100,14 +1101,14 @@ function library:CreateWindow(properties)
 										color = fromRGB(255, 255, 255)
 									}
 									
-									local colorButton
+									local colorButton, colorButtonFrame
 									
 									do -- // Colorpicker UI
-										-- кнопка colorpicker (справа от toggle)
+										-- кнопка colorpicker (справа от toggle) - прозрачный контейнер
 										colorButton = utility:create("TextButton", {
 											Name = "ColorButton",
 											Parent = toggle.button,
-											BackgroundColor3 = colorpicker.default,
+											BackgroundTransparency = 1,
 											BorderColor3 = fromRGB(0, 0, 0),
 											BorderSizePixel = 0,
 											AnchorPoint = newVector2(1, 0.5),
@@ -1115,6 +1116,27 @@ function library:CreateWindow(properties)
 											Size = newUDim2(0, 12, 0, 10),
 											AutoButtonColor = false,
 											Text = "",
+											ZIndex = 105
+										})
+										
+										-- клеточки под кнопку для показа прозрачности
+										utility:create("ImageLabel", {
+											Parent = colorButton,
+											Image = "rbxassetid://18274452449",
+											ScaleType = Enum.ScaleType.Tile,
+											TileSize = newUDim2(0, 4, 0, 4),
+											BackgroundTransparency = 1,
+											Size = newUDim2(1, 0, 1, 0),
+											ZIndex = 104
+										})
+										
+										-- цветной слой поверх клеточек
+										colorButtonFrame = utility:create("Frame", {
+											Parent = colorButton,
+											BackgroundColor3 = colorpicker.default,
+											BackgroundTransparency = 1 - colorpicker.alpha,
+											BorderSizePixel = 0,
+											Size = newUDim2(1, 0, 1, 0),
 											ZIndex = 105
 										})
 										
@@ -1333,7 +1355,7 @@ function library:CreateWindow(properties)
 										alphaFrame = utility:create("TextButton", {
 											Name = "AlphaPallete",
 											Parent = colorpickerWindow,
-											BackgroundColor3 = fromRGB(255, 255, 255),
+											BackgroundTransparency = 1,
 											BorderColor3 = fromRGB(0, 0, 0),
 											BorderSizePixel = 0,
 											Position = newUDim2(0.875, 0, 0.061, 0),
@@ -1352,9 +1374,29 @@ function library:CreateWindow(properties)
 											LineJoinMode = Enum.LineJoinMode.Miter
 										})
 										
-										-- alpha gradient
-										utility:create("UIGradient", {
+										-- клеточки под alpha
+										utility:create("ImageLabel", {
 											Parent = alphaFrame,
+											Image = "rbxassetid://18274452449",
+											ScaleType = Enum.ScaleType.Tile,
+											TileSize = newUDim2(0, 8, 0, 8),
+											BackgroundTransparency = 1,
+											Size = newUDim2(1, 0, 1, 0),
+											ZIndex = 202
+										})
+										
+										-- цветной слой поверх клеточек
+										local alphaColorFrame = utility:create("Frame", {
+											Parent = alphaFrame,
+											BackgroundColor3 = colorpicker.color,
+											BorderSizePixel = 0,
+											Size = newUDim2(1, 0, 1, 0),
+											ZIndex = 203
+										})
+										
+										-- alpha gradient поверх цвета
+										utility:create("UIGradient", {
+											Parent = alphaColorFrame,
 											Rotation = 90,
 											Transparency = newNumberSequence({
 												newNumberSequenceKeypoint(0, 1),
@@ -1383,12 +1425,15 @@ function library:CreateWindow(properties)
 										})
 										
 										-- сохраняем ссылки
+									colorpicker.button = colorButton
+									colorpicker.buttonFrame = colorButtonFrame
 									colorpicker.window = colorpickerWindow
 									colorpicker.palette = paletteFrame
 									colorpicker.palettePicker = palettePicker
 									colorpicker.hueFrame = hueFrame
 									colorpicker.huePicker = huePicker
 									colorpicker.alphaFrame = alphaFrame
+									colorpicker.alphaColorFrame = alphaColorFrame
 									colorpicker.alphaPicker = alphaPicker
 								end
 								
@@ -1396,13 +1441,16 @@ function library:CreateWindow(properties)
 								local function updateColorFromHSV()
 									colorpicker.color = fromHSV(colorpicker.hue, colorpicker.saturation, colorpicker.value)
 									
-									-- обновляем цвет кнопки
-									utility:tween(colorpicker.button, {BackgroundColor3 = colorpicker.color}, 0.1)
+									-- обновляем цвет и прозрачность кнопки
+									utility:tween(colorpicker.buttonFrame, {
+										BackgroundColor3 = colorpicker.color,
+										BackgroundTransparency = 1 - colorpicker.alpha
+									}, 0.1)
 									
 									-- обновляем цвет палитры (hue)
 									local hueColor = fromHSV(colorpicker.hue, 1, 1)
 									paletteFrame.BackgroundColor3 = hueColor
-									alphaFrame.BackgroundColor3 = colorpicker.color
+									colorpicker.alphaColorFrame.BackgroundColor3 = colorpicker.color
 									
 									-- обновляем позицию пикеров
 									palettePicker.Position = newUDim2(colorpicker.saturation, -1, colorpicker.value, -1)
@@ -1436,12 +1484,12 @@ function library:CreateWindow(properties)
 								library.connections[#library.connections + 1] = paletteFrame.MouseButton1Down:Connect(function()
 									paletteConnection = uis.InputChanged:Connect(function(input)
 										if input.UserInputType == Enum.UserInputType.MouseMovement then
-											local mouse = uis:GetMouseLocation()
+											local mousePos = uis:GetMouseLocation() - guiService:GetGuiInset()
 											local palettePos = paletteFrame.AbsolutePosition
 											local paletteSize = paletteFrame.AbsoluteSize
 											
-											local relativeX = clamp((mouse.X - palettePos.X) / paletteSize.X, 0, 1)
-											local relativeY = clamp((mouse.Y - palettePos.Y) / paletteSize.Y, 0, 1)
+											local relativeX = clamp((mousePos.X - palettePos.X) / paletteSize.X, 0, 1)
+											local relativeY = clamp((mousePos.Y - palettePos.Y) / paletteSize.Y, 0, 1)
 											
 											colorpicker.saturation = relativeX
 											colorpicker.value = relativeY
@@ -1463,11 +1511,11 @@ function library:CreateWindow(properties)
 								library.connections[#library.connections + 1] = hueFrame.MouseButton1Down:Connect(function()
 									hueConnection = uis.InputChanged:Connect(function(input)
 										if input.UserInputType == Enum.UserInputType.MouseMovement then
-											local mouse = uis:GetMouseLocation()
+											local mousePos = uis:GetMouseLocation() - guiService:GetGuiInset()
 											local huePos = hueFrame.AbsolutePosition
 											local hueSize = hueFrame.AbsoluteSize
 											
-											local relativeY = clamp((mouse.Y - huePos.Y) / hueSize.Y, 0, 1)
+											local relativeY = clamp((mousePos.Y - huePos.Y) / hueSize.Y, 0, 1)
 											colorpicker.hue = relativeY
 											
 											updateColorFromHSV()
@@ -1487,11 +1535,11 @@ function library:CreateWindow(properties)
 								library.connections[#library.connections + 1] = alphaFrame.MouseButton1Down:Connect(function()
 									alphaConnection = uis.InputChanged:Connect(function(input)
 										if input.UserInputType == Enum.UserInputType.MouseMovement then
-											local mouse = uis:GetMouseLocation()
+											local mousePos = uis:GetMouseLocation() - guiService:GetGuiInset()
 											local alphaPos = alphaFrame.AbsolutePosition
 											local alphaSize = alphaFrame.AbsoluteSize
 											
-											local relativeY = clamp((mouse.Y - alphaPos.Y) / alphaSize.Y, 0, 1)
+											local relativeY = clamp((mousePos.Y - alphaPos.Y) / alphaSize.Y, 0, 1)
 											colorpicker.alpha = 1 - relativeY
 											
 											updateColorFromHSV()
