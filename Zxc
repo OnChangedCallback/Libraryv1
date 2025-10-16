@@ -1222,6 +1222,28 @@ function library:CreateWindow(properties)
 											ZIndex = 200
 										})
 										
+										-- заголовок colorpicker
+										local titleLabel = utility:create("TextLabel", {
+											Parent = windowBackground,
+											BackgroundTransparency = 1,
+											Position = newUDim2(0, 3, 0, 0),
+											Size = newUDim2(0, 0, 0, 16),
+											FontFace = library.Font,
+											Text = colorpicker.name,
+											TextColor3 = library.Theme["Text"],
+											TextSize = 12,
+											TextXAlignment = Enum.TextXAlignment.Left,
+											ZIndex = 202,
+											AutomaticSize = Enum.AutomaticSize.XY
+										})
+										
+										utility:create("UIStroke", {
+											Parent = titleLabel,
+											Color = library.Theme["Text Border"],
+											Thickness = 1,
+											LineJoinMode = Enum.LineJoinMode.Miter
+										})
+										
 										-- outline
 										utility:create("UIStroke", {
 											Parent = colorpickerWindow,
@@ -1322,8 +1344,8 @@ function library:CreateWindow(properties)
 											Parent = valueFrame,
 											Rotation = 90,
 											Transparency = newNumberSequence({
-												newNumberSequenceKeypoint(0, 0),
-												newNumberSequenceKeypoint(1, 1)
+												newNumberSequenceKeypoint(0, 1),
+												newNumberSequenceKeypoint(1, 0)
 											})
 										})
 										
@@ -1617,14 +1639,35 @@ function library:CreateWindow(properties)
 											BorderSizePixel = 0,
 											Position = newUDim2(0, 2, 0, 0),
 											Size = newUDim2(1, -4, 1, 0),
-											Font = Enum.Font.Code,
+											FontFace = library.Font,
 											Text = "255, 255, 255",
 											TextColor3 = library.Theme["Text"],
 											TextSize = 12,
 											TextXAlignment = Enum.TextXAlignment.Left,
 											ZIndex = 203,
-											ClearTextOnFocus = false
+											ClearTextOnFocus = false,
+											PlaceholderText = "R, G, B",
+											PlaceholderColor3 = library.Theme["Text"]:lerp(library.Theme["Background"], 0.6)
 										})
+										
+										-- hovering эффекты для RGB textbox
+										library.connections[#library.connections + 1] = rgbContainer.MouseEnter:Connect(function()
+											utility:tween(rgbBackground, {BackgroundColor3 = library.Theme["Hovered Element"]}, 0.2)
+										end)
+										
+										library.connections[#library.connections + 1] = rgbContainer.MouseLeave:Connect(function()
+											if not rgbBox:IsFocused() then
+												utility:tween(rgbBackground, {BackgroundColor3 = library.Theme["Element"]}, 0.2)
+											end
+										end)
+										
+										library.connections[#library.connections + 1] = rgbBox.Focused:Connect(function()
+											utility:tween(rgbBackground, {BackgroundColor3 = library.Theme["Hovered Element"]}, 0.2)
+										end)
+										
+										library.connections[#library.connections + 1] = rgbBox.FocusLost:Connect(function()
+											utility:tween(rgbBackground, {BackgroundColor3 = library.Theme["Element"]}, 0.2)
+										end)
 										
 										-- HEX textbox container
 										local hexContainer = utility:create("Frame", {
@@ -1707,14 +1750,35 @@ function library:CreateWindow(properties)
 											BorderSizePixel = 0,
 											Position = newUDim2(0, 2, 0, 0),
 											Size = newUDim2(1, -4, 1, 0),
-											Font = Enum.Font.Code,
+											FontFace = library.Font,
 											Text = "#FFFFFF",
 											TextColor3 = library.Theme["Text"],
 											TextSize = 12,
 											TextXAlignment = Enum.TextXAlignment.Left,
 											ZIndex = 203,
-											ClearTextOnFocus = false
+											ClearTextOnFocus = false,
+											PlaceholderText = "#RRGGBB",
+											PlaceholderColor3 = library.Theme["Text"]:lerp(library.Theme["Background"], 0.6)
 										})
+										
+										-- hovering эффекты для HEX textbox
+										library.connections[#library.connections + 1] = hexContainer.MouseEnter:Connect(function()
+											utility:tween(hexBackground, {BackgroundColor3 = library.Theme["Hovered Element"]}, 0.2)
+										end)
+										
+										library.connections[#library.connections + 1] = hexContainer.MouseLeave:Connect(function()
+											if not hexBox:IsFocused() then
+												utility:tween(hexBackground, {BackgroundColor3 = library.Theme["Element"]}, 0.2)
+											end
+										end)
+										
+										library.connections[#library.connections + 1] = hexBox.Focused:Connect(function()
+											utility:tween(hexBackground, {BackgroundColor3 = library.Theme["Hovered Element"]}, 0.2)
+										end)
+										
+										library.connections[#library.connections + 1] = hexBox.FocusLost:Connect(function()
+											utility:tween(hexBackground, {BackgroundColor3 = library.Theme["Element"]}, 0.2)
+										end)
 										
 										-- сохраняем ссылки
 									colorpicker.button = colorButton
@@ -1782,7 +1846,7 @@ function library:CreateWindow(properties)
 									colorpicker.alphaColorFrame.BackgroundColor3 = colorpicker.color
 									
 									-- обновляем позицию пикеров
-									palettePicker.Position = newUDim2(colorpicker.saturation, -1, colorpicker.value, -1)
+									palettePicker.Position = newUDim2(colorpicker.saturation, -1, 1 - colorpicker.value, -1)
 									huePicker.Position = newUDim2(colorpicker.hue, 1, 0, 1) -- горизонтальная позиция
 									colorpicker.alphaPicker.Position = newUDim2(0, 1, colorpicker.alpha, 1) -- вертикальная позиция
 									
@@ -1833,7 +1897,7 @@ function library:CreateWindow(properties)
 											local relativeY = clamp((mousePos.Y - palettePos.Y) / paletteSize.Y, 0, 1)
 											
 											colorpicker.saturation = relativeX
-											colorpicker.value = relativeY
+											colorpicker.value = 1 - relativeY -- инвертируем для правильного отображения
 											
 											updateColorFromHSV()
 										end
