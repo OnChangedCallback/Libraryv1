@@ -18,8 +18,11 @@ local newUDim = UDim.new
 local newVector2 = Vector2.new
 local newColor3 = Color3.new
 local fromRGB = Color3.fromRGB
+local fromHSV = Color3.fromHSV
 local newColorSequence = ColorSequence.new
 local newColorSequenceKeypoint = ColorSequenceKeypoint.new
+local newNumberSequence = NumberSequence.new
+local newNumberSequenceKeypoint = NumberSequenceKeypoint.new
 local newInstance = Instance.new
 
 -- // Library
@@ -148,10 +151,11 @@ function library:CreateWindow(properties)
 	properties = properties or {}
 	
 	local window = {
-		name = properties.Name or "UI Library",
+		name = properties.Name or "Window",
 		size = properties.Size or newUDim2(0, 600, 0, 400),
 		tabs = {},
-		currentTab = nil
+		currentTab = nil,
+		screenGui = nil
 	}
 	
 	do -- // Window UI
@@ -161,6 +165,8 @@ function library:CreateWindow(properties)
 			Parent = coregui,
 			ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 		})
+		
+		window.screenGui = screenGui
 		
 		-- mainframe
 		local mainFrame = utility:create("Frame", {
@@ -842,7 +848,8 @@ function library:CreateWindow(properties)
 							local section = {
 								name = properties.Name or "Section",
 								side = properties.Side or 1,
-								subtab = subtab
+								subtab = subtab,
+								window = subtab.tab.window
 							}
 							
 							do -- // Section UI
@@ -962,7 +969,8 @@ function library:CreateWindow(properties)
 									name = properties.Name or "Toggle",
 									flag = properties.Flag or properties.Name or "Toggle",
 									value = properties.Default or false,
-									callback = properties.Callback or function() end
+									callback = properties.Callback or function() end,
+									section = section
 								}
 								
 								local toggleButton, indicator, toggleText
@@ -1156,10 +1164,362 @@ function library:CreateWindow(properties)
 										end
 									end
 									
+									-- создаем окно colorpicker
+									local colorpickerWindow, paletteFrame, palettePicker, hueFrame, huePicker, alphaFrame, alphaPicker
+									
+									do -- // Colorpicker Window
+										colorpickerWindow = utility:create("Frame", {
+											Name = "ColorpickerWindow",
+											Parent = toggle.section.window.screenGui,
+											BackgroundColor3 = library.Theme["Background"],
+											BorderColor3 = fromRGB(0, 0, 0),
+											BorderSizePixel = 0,
+											Position = newUDim2(0, 0, 0, 0),
+											Size = newUDim2(0, 200, 0, 150),
+											Visible = false,
+											ZIndex = 200
+										})
+										
+										-- outline
+										utility:create("UIStroke", {
+											Parent = colorpickerWindow,
+											ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+											Color = library.Theme["Outline"],
+											Thickness = 1,
+											LineJoinMode = Enum.LineJoinMode.Miter
+										})
+										
+										
+										-- палитра saturation/value
+										paletteFrame = utility:create("TextButton", {
+											Name = "MainPalette",
+											Parent = colorpickerWindow,
+											BackgroundColor3 = fromRGB(255, 0, 0), -- будет меняться по hue
+											BorderColor3 = fromRGB(0, 0, 0),
+											BorderSizePixel = 0,
+											Position = newUDim2(0.05, 0, 0.068, 0),
+											Size = newUDim2(0, 130, 0, 130),
+											AutoButtonColor = false,
+											Text = "",
+											ZIndex = 203
+										})
+										
+										-- outline для палитры
+										utility:create("UIStroke", {
+											Parent = paletteFrame,
+											ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+											Color = library.Theme["Outline"],
+											Thickness = 1,
+											LineJoinMode = Enum.LineJoinMode.Miter
+										})
+										
+										-- saturation gradient (белый -> прозрачный)
+										local saturationFrame = utility:create("Frame", {
+											Name = "Saturation",
+											Parent = paletteFrame,
+											BackgroundColor3 = fromRGB(255, 255, 255),
+											BorderSizePixel = 0,
+											Size = newUDim2(1, 0, 1, 0),
+											ZIndex = 204
+										})
+										
+										utility:create("UIGradient", {
+											Parent = saturationFrame,
+											Rotation = 0,
+											Transparency = newNumberSequence({
+												newNumberSequenceKeypoint(0, 0),
+												newNumberSequenceKeypoint(1, 1)
+											})
+										})
+										
+										-- value gradient (прозрачный -> черный)
+										local valueFrame = utility:create("Frame", {
+											Name = "Value",
+											Parent = paletteFrame,
+											BackgroundColor3 = fromRGB(0, 0, 0),
+											BorderSizePixel = 0,
+											Size = newUDim2(1, 0, 1, 0),
+											ZIndex = 205
+										})
+										
+										utility:create("UIGradient", {
+											Parent = valueFrame,
+											Rotation = 90,
+											Transparency = newNumberSequence({
+												newNumberSequenceKeypoint(0, 0),
+												newNumberSequenceKeypoint(1, 1)
+											})
+										})
+										
+										-- picker для палитры
+										palettePicker = utility:create("Frame", {
+											Name = "Picker",
+											Parent = paletteFrame,
+											BackgroundColor3 = fromRGB(255, 255, 255),
+											BorderColor3 = fromRGB(0, 0, 0),
+											BorderSizePixel = 0,
+											Position = newUDim2(1, -1, 0, -1),
+											Size = newUDim2(0, 2, 0, 2),
+											ZIndex = 206
+										})
+										
+										utility:create("UIStroke", {
+											Parent = palettePicker,
+											ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+											Color = library.Theme["Outline"],
+											Thickness = 1,
+											LineJoinMode = Enum.LineJoinMode.Miter
+										})
+										
+										-- hue slider
+										hueFrame = utility:create("TextButton", {
+											Name = "HuePallete",
+											Parent = colorpickerWindow,
+											BackgroundColor3 = fromRGB(255, 255, 255),
+											BorderColor3 = fromRGB(0, 0, 0),
+											BorderSizePixel = 0,
+											Position = newUDim2(0.75, 0, 0.061, 0),
+											Size = newUDim2(0, 15, 0, 130),
+											AutoButtonColor = false,
+											Text = "",
+											ZIndex = 203
+										})
+										
+										-- outline для hue
+										utility:create("UIStroke", {
+											Parent = hueFrame,
+											ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+											Color = library.Theme["Outline"],
+											Thickness = 1,
+											LineJoinMode = Enum.LineJoinMode.Miter
+										})
+										
+										-- hue gradient (радуга)
+										utility:create("UIGradient", {
+											Parent = hueFrame,
+											Rotation = 90,
+											Color = newColorSequence({
+												newColorSequenceKeypoint(0, fromRGB(255, 0, 0)),
+												newColorSequenceKeypoint(0.17, fromRGB(255, 255, 0)),
+												newColorSequenceKeypoint(0.33, fromRGB(0, 255, 0)),
+												newColorSequenceKeypoint(0.5, fromRGB(0, 255, 255)),
+												newColorSequenceKeypoint(0.67, fromRGB(0, 0, 255)),
+												newColorSequenceKeypoint(0.83, fromRGB(255, 0, 255)),
+												newColorSequenceKeypoint(1, fromRGB(255, 0, 0))
+											})
+										})
+										
+										-- hue picker
+										huePicker = utility:create("Frame", {
+											Name = "HuePicker",
+											Parent = hueFrame,
+											BackgroundColor3 = fromRGB(255, 255, 255),
+											BorderColor3 = fromRGB(0, 0, 0),
+											BorderSizePixel = 0,
+											Position = newUDim2(0, -1, 0, -1),
+											Size = newUDim2(1, 2, 0, 2),
+											ZIndex = 204
+										})
+										
+										utility:create("UIStroke", {
+											Parent = huePicker,
+											ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+											Color = library.Theme["Outline"],
+											Thickness = 1,
+											LineJoinMode = Enum.LineJoinMode.Miter
+										})
+										
+										-- alpha slider
+										alphaFrame = utility:create("TextButton", {
+											Name = "AlphaPallete",
+											Parent = colorpickerWindow,
+											BackgroundColor3 = fromRGB(255, 255, 255),
+											BorderColor3 = fromRGB(0, 0, 0),
+											BorderSizePixel = 0,
+											Position = newUDim2(0.875, 0, 0.061, 0),
+											Size = newUDim2(0, 15, 0, 130),
+											AutoButtonColor = false,
+											Text = "",
+											ZIndex = 203
+										})
+										
+										-- outline для alpha
+										utility:create("UIStroke", {
+											Parent = alphaFrame,
+											ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+											Color = library.Theme["Outline"],
+											Thickness = 1,
+											LineJoinMode = Enum.LineJoinMode.Miter
+										})
+										
+										-- alpha gradient
+										utility:create("UIGradient", {
+											Parent = alphaFrame,
+											Rotation = 90,
+											Transparency = newNumberSequence({
+												newNumberSequenceKeypoint(0, 1),
+												newNumberSequenceKeypoint(1, 0)
+											})
+										})
+										
+										-- alpha picker
+										alphaPicker = utility:create("Frame", {
+											Name = "AlphaPicker",
+											Parent = alphaFrame,
+											BackgroundColor3 = fromRGB(255, 255, 255),
+											BorderColor3 = fromRGB(0, 0, 0),
+											BorderSizePixel = 0,
+											Position = newUDim2(0, -1, 1, -1),
+											Size = newUDim2(1, 2, 0, 2),
+											ZIndex = 204
+										})
+										
+										utility:create("UIStroke", {
+											Parent = alphaPicker,
+											ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+											Color = library.Theme["Outline"],
+											Thickness = 1,
+											LineJoinMode = Enum.LineJoinMode.Miter
+										})
+										
+										-- сохраняем ссылки
+									colorpicker.window = colorpickerWindow
+									colorpicker.palette = paletteFrame
+									colorpicker.palettePicker = palettePicker
+									colorpicker.hueFrame = hueFrame
+									colorpicker.huePicker = huePicker
+									colorpicker.alphaFrame = alphaFrame
+									colorpicker.alphaPicker = alphaPicker
+								end
+								
+								-- HSV utility functions
+								local function updateColorFromHSV()
+									colorpicker.color = fromHSV(colorpicker.hue, colorpicker.saturation, colorpicker.value)
+									
+									-- обновляем цвет кнопки
+									utility:tween(colorpicker.button, {BackgroundColor3 = colorpicker.color}, 0.1)
+									
+									-- обновляем цвет палитры (hue)
+									local hueColor = fromHSV(colorpicker.hue, 1, 1)
+									paletteFrame.BackgroundColor3 = hueColor
+									alphaFrame.BackgroundColor3 = colorpicker.color
+									
+									-- обновляем позицию пикеров
+									palettePicker.Position = newUDim2(colorpicker.saturation, -1, colorpicker.value, -1)
+									huePicker.Position = newUDim2(0, -1, colorpicker.hue, -1)
+									alphaPicker.Position = newUDim2(0, -1, 1 - colorpicker.alpha, -1)
+									
+									-- сохраняем в флаги
+									library.flags[colorpicker.flag] = {
+										Color = colorpicker.color,
+										Alpha = colorpicker.alpha,
+										HexValue = "#" .. colorpicker.color:ToHex()
+									}
+									
+									-- callback
+									colorpicker.callback(colorpicker.color, colorpicker.alpha)
+								end
+								
+								-- обновляем функцию Set
+								function colorpicker:Set(color, alpha)
+									colorpicker.color = color or fromRGB(255, 255, 255)
+									colorpicker.alpha = alpha or 1
+									
+									-- конвертируем в HSV
+									colorpicker.hue, colorpicker.saturation, colorpicker.value = colorpicker.color:ToHSV()
+									
+									updateColorFromHSV()
+								end
+								
+								-- обработчики событий для палитры
+								local paletteConnection
+								library.connections[#library.connections + 1] = paletteFrame.MouseButton1Down:Connect(function()
+									paletteConnection = uis.InputChanged:Connect(function(input)
+										if input.UserInputType == Enum.UserInputType.MouseMovement then
+											local mouse = uis:GetMouseLocation()
+											local palettePos = paletteFrame.AbsolutePosition
+											local paletteSize = paletteFrame.AbsoluteSize
+											
+											local relativeX = clamp((mouse.X - palettePos.X) / paletteSize.X, 0, 1)
+											local relativeY = clamp((mouse.Y - palettePos.Y) / paletteSize.Y, 0, 1)
+											
+											colorpicker.saturation = relativeX
+											colorpicker.value = relativeY
+											
+											updateColorFromHSV()
+										end
+									end)
+								end)
+								
+								library.connections[#library.connections + 1] = uis.InputEnded:Connect(function(input)
+									if input.UserInputType == Enum.UserInputType.MouseButton1 and paletteConnection then
+										paletteConnection:Disconnect()
+										paletteConnection = nil
+									end
+								end)
+								
+								-- обработчики событий для hue слайдера
+								local hueConnection
+								library.connections[#library.connections + 1] = hueFrame.MouseButton1Down:Connect(function()
+									hueConnection = uis.InputChanged:Connect(function(input)
+										if input.UserInputType == Enum.UserInputType.MouseMovement then
+											local mouse = uis:GetMouseLocation()
+											local huePos = hueFrame.AbsolutePosition
+											local hueSize = hueFrame.AbsoluteSize
+											
+											local relativeY = clamp((mouse.Y - huePos.Y) / hueSize.Y, 0, 1)
+											colorpicker.hue = relativeY
+											
+											updateColorFromHSV()
+										end
+									end)
+								end)
+								
+								library.connections[#library.connections + 1] = uis.InputEnded:Connect(function(input)
+									if input.UserInputType == Enum.UserInputType.MouseButton1 and hueConnection then
+										hueConnection:Disconnect()
+										hueConnection = nil
+									end
+								end)
+								
+								-- обработчики событий для alpha слайдера
+								local alphaConnection
+								library.connections[#library.connections + 1] = alphaFrame.MouseButton1Down:Connect(function()
+									alphaConnection = uis.InputChanged:Connect(function(input)
+										if input.UserInputType == Enum.UserInputType.MouseMovement then
+											local mouse = uis:GetMouseLocation()
+											local alphaPos = alphaFrame.AbsolutePosition
+											local alphaSize = alphaFrame.AbsoluteSize
+											
+											local relativeY = clamp((mouse.Y - alphaPos.Y) / alphaSize.Y, 0, 1)
+											colorpicker.alpha = 1 - relativeY
+											
+											updateColorFromHSV()
+										end
+									end)
+								end)
+								
+								library.connections[#library.connections + 1] = uis.InputEnded:Connect(function(input)
+									if input.UserInputType == Enum.UserInputType.MouseButton1 and alphaConnection then
+										alphaConnection:Disconnect()
+										alphaConnection = nil
+									end
+								end)
+									
 									-- click event
 									library.connections[#library.connections + 1] = colorButton.MouseButton1Click:Connect(function()
-										-- TODO: открыть colorpicker окно
-										print("Colorpicker clicked for", colorpicker.name)
+										colorpicker.isOpen = not colorpicker.isOpen
+										
+										if colorpicker.isOpen then
+											-- позиционируем окно рядом с кнопкой
+											local buttonPos = colorButton.AbsolutePosition
+											local buttonSize = colorButton.AbsoluteSize
+											
+											colorpickerWindow.Position = newUDim2(0, buttonPos.X + buttonSize.X + 5, 0, buttonPos.Y)
+											colorpickerWindow.Visible = true
+										else
+											colorpickerWindow.Visible = false
+										end
 									end)
 									
 									-- set default
@@ -1722,7 +2082,8 @@ function library:CreateWindow(properties)
 				local section = {
 					name = properties.Name or "Section",
 					side = properties.Side or 1,
-					tab = tab
+					tab = tab,
+					window = tab.window
 				}
 				
 				do -- // Section UI
@@ -1842,7 +2203,8 @@ function library:CreateWindow(properties)
 						name = properties.Name or "Toggle",
 						flag = properties.Flag or properties.Name or "Toggle",
 						value = properties.Default or false,
-						callback = properties.Callback or function() end
+						callback = properties.Callback or function() end,
+						section = section
 					}
 					
 					local toggleButton, indicator, toggleText
