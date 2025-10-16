@@ -1071,6 +1071,103 @@ function library:CreateWindow(properties)
 									toggle:Set(properties.Default)
 								end
 								
+								-- AddColorpicker для toggle
+								function toggle:AddColorpicker(properties)
+									properties = properties or {}
+									
+									local colorpicker = {
+										name = properties.Name or "Color",
+										flag = properties.Flag or toggle.flag .. "_Color",
+										default = properties.Default or fromRGB(255, 255, 255),
+										alpha = properties.Alpha or 1,
+										callback = properties.Callback or function() end,
+										
+										-- HSV значения
+										hue = 0,
+										saturation = 1,
+										value = 1,
+										
+										-- состояние
+										isOpen = false,
+										color = fromRGB(255, 255, 255)
+									}
+									
+									local colorButton
+									
+									do -- // Colorpicker UI
+										-- кнопка colorpicker (справа от toggle)
+										colorButton = utility:create("TextButton", {
+											Name = "ColorButton",
+											Parent = toggle.button,
+											BackgroundColor3 = colorpicker.default,
+											BorderColor3 = fromRGB(0, 0, 0),
+											BorderSizePixel = 0,
+											AnchorPoint = newVector2(1, 0.5),
+											Position = newUDim2(1, -2, 0.5, 0),
+											Size = newUDim2(0, 12, 0, 10),
+											AutoButtonColor = false,
+											Text = "",
+											ZIndex = 105
+										})
+										
+										-- outline для кнопки
+										utility:create("UIStroke", {
+											Parent = colorButton,
+											ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+											Color = library.Theme["Outline"],
+											Thickness = 1,
+											LineJoinMode = Enum.LineJoinMode.Miter
+										})
+										
+										-- gradient для кнопки
+										utility:create("UIGradient", {
+											Parent = colorButton,
+											Rotation = 90,
+											Color = newColorSequence({
+												newColorSequenceKeypoint(0, fromRGB(255, 255, 255)),
+												newColorSequenceKeypoint(1, fromRGB(127, 127, 127))
+											})
+										})
+										
+										colorpicker.button = colorButton
+									end
+									
+									do -- // Colorpicker Functions
+										function colorpicker:Set(color, alpha)
+											colorpicker.color = color or fromRGB(255, 255, 255)
+											colorpicker.alpha = alpha or 1
+											
+											-- обновляем цвет кнопки
+											utility:tween(colorpicker.button, {BackgroundColor3 = colorpicker.color}, 0.2)
+											
+											-- сохраняем в флаги
+											library.flags[colorpicker.flag] = {
+												Color = colorpicker.color,
+												Alpha = colorpicker.alpha,
+												HexValue = "#" .. colorpicker.color:ToHex()
+											}
+											
+											-- callback
+											colorpicker.callback(colorpicker.color, colorpicker.alpha)
+										end
+										
+										function colorpicker:Get()
+											return colorpicker.color, colorpicker.alpha
+										end
+									end
+									
+									-- click event
+									library.connections[#library.connections + 1] = colorButton.MouseButton1Click:Connect(function()
+										-- TODO: открыть colorpicker окно
+										print("Colorpicker clicked for", colorpicker.name)
+									end)
+									
+									-- set default
+									colorpicker:Set(colorpicker.default, colorpicker.alpha)
+									
+									return colorpicker
+								end
+								
 								return toggle
 							end
 							
@@ -1851,10 +1948,107 @@ function library:CreateWindow(properties)
 						toggle:Set(properties.Default)
 					end
 					
-					return toggle
+					-- AddColorpicker для toggle
+				function toggle:AddColorpicker(properties)
+					properties = properties or {}
+					
+					local colorpicker = {
+						name = properties.Name or "Color",
+						flag = properties.Flag or toggle.flag .. "_Color",
+						default = properties.Default or fromRGB(255, 255, 255),
+						alpha = properties.Alpha or 1,
+						callback = properties.Callback or function() end,
+						
+						-- HSV значения
+						hue = 0,
+						saturation = 1,
+						value = 1,
+						
+						-- состояние
+						isOpen = false,
+						color = fromRGB(255, 255, 255)
+					}
+					
+					local colorButton
+					
+					do -- // Colorpicker UI
+						-- кнопка colorpicker (справа от toggle)
+						colorButton = utility:create("TextButton", {
+							Name = "ColorButton",
+							Parent = toggle.button,
+							BackgroundColor3 = colorpicker.default,
+							BorderColor3 = fromRGB(0, 0, 0),
+							BorderSizePixel = 0,
+							AnchorPoint = newVector2(1, 0.5),
+							Position = newUDim2(1, -2, 0.5, 0),
+							Size = newUDim2(0, 12, 0, 10),
+							AutoButtonColor = false,
+							Text = "",
+							ZIndex = 105
+						})
+						
+						-- outline для кнопки
+						utility:create("UIStroke", {
+							Parent = colorButton,
+							ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+							Color = library.Theme["Outline"],
+							Thickness = 1,
+							LineJoinMode = Enum.LineJoinMode.Miter
+						})
+						
+						-- gradient для кнопки
+						utility:create("UIGradient", {
+							Parent = colorButton,
+							Rotation = 90,
+							Color = newColorSequence({
+								newColorSequenceKeypoint(0, fromRGB(255, 255, 255)),
+								newColorSequenceKeypoint(1, fromRGB(127, 127, 127))
+							})
+						})
+						
+						colorpicker.button = colorButton
+					end
+					
+					do -- // Colorpicker Functions
+						function colorpicker:Set(color, alpha)
+							colorpicker.color = color or fromRGB(255, 255, 255)
+							colorpicker.alpha = alpha or 1
+							
+							-- обновляем цвет кнопки
+							utility:tween(colorpicker.button, {BackgroundColor3 = colorpicker.color}, 0.2)
+							
+							-- сохраняем в флаги
+							library.flags[colorpicker.flag] = {
+								Color = colorpicker.color,
+								Alpha = colorpicker.alpha,
+								HexValue = "#" .. colorpicker.color:ToHex()
+							}
+							
+							-- callback
+							colorpicker.callback(colorpicker.color, colorpicker.alpha)
+						end
+						
+						function colorpicker:Get()
+							return colorpicker.color, colorpicker.alpha
+						end
+					end
+					
+					-- click event
+					library.connections[#library.connections + 1] = colorButton.MouseButton1Click:Connect(function()
+						-- TODO: открыть colorpicker окно
+						print("Colorpicker clicked for", colorpicker.name)
+					end)
+					
+					-- set default
+					colorpicker:Set(colorpicker.default, colorpicker.alpha)
+					
+					return colorpicker
 				end
 				
-				-- AddSlider для секции (таб без подвкладок)
+				return toggle
+			end
+			
+			-- AddSlider для секции (таб без подвкладок)
 				function section:AddSlider(properties)
 					properties = properties or {}
 					
@@ -2462,6 +2656,27 @@ do
 		Suffix = "px",
 		Callback = function(value)
 			print("Box Thickness:", value)
+		end
+	})
+	
+	-- пример colorpicker
+	local boxToggle = boxSection:AddToggle({
+		Name = "Box Color",
+		Flag = "BoxESP_ColorEnabled",
+		Default = true,
+		Callback = function(value)
+			print("Box Color Enabled:", value)
+		end
+	})
+	
+	-- добавляем colorpicker к toggle
+	boxToggle:AddColorpicker({
+		Name = "Box Color",
+		Flag = "BoxESP_Color",
+		Default = fromRGB(255, 0, 0), -- красный по умолчанию
+		Alpha = 1,
+		Callback = function(color, alpha)
+			print("Box Color:", color, "Alpha:", alpha)
 		end
 	})
 	
