@@ -1197,7 +1197,7 @@ function library:CreateWindow(properties)
 											BackgroundColor3 = library.Theme["Outline"],
 											BorderSizePixel = 0,
 											Position = newUDim2(0, 0, 0, 0),
-											Size = newUDim2(0, 179, 0, 234),
+											Size = newUDim2(0, 179, 0, 258),
 											Visible = false,
 											ZIndex = 200,
 											AutoButtonColor = false,
@@ -1269,6 +1269,156 @@ function library:CreateWindow(properties)
 											BackgroundTransparency = 1
 										})
 										
+										-- вкладки colorpicker
+										local tabsContainer = utility:create("Frame", {
+											Name = "TabsContainer",
+											Parent = windowBackground,
+											BackgroundColor3 = library.Theme["Outline"],
+											BorderSizePixel = 0,
+											Position = newUDim2(0, 3, 0, 18),
+											Size = newUDim2(1, -6, 0, 20),
+											ZIndex = 201
+										})
+										
+										local tabsInline = utility:create("Frame", {
+											Parent = tabsContainer,
+											BackgroundColor3 = library.Theme["Border"],
+											BorderSizePixel = 0,
+											Position = newUDim2(0, 1, 0, 1),
+											Size = newUDim2(1, -2, 1, -2),
+											ZIndex = 201
+										})
+										
+										local tabsBackground = utility:create("Frame", {
+											Parent = tabsInline,
+											BackgroundColor3 = library.Theme["Inline"],
+											BorderSizePixel = 0,
+											Position = newUDim2(0, 1, 0, 1),
+											Size = newUDim2(1, -2, 1, -2),
+											ZIndex = 201
+										})
+										
+										-- holder для кнопок вкладок
+										local tabsHolder = utility:create("Frame", {
+											Name = "TabsHolder",
+											Parent = tabsBackground,
+											BackgroundTransparency = 1,
+											Position = newUDim2(0, 4, 0, 0),
+											Size = newUDim2(1, -8, 1, 0),
+											ZIndex = 202
+										})
+										
+										utility:create("UIListLayout", {
+											Parent = tabsHolder,
+											FillDirection = Enum.FillDirection.Horizontal,
+											HorizontalAlignment = Enum.HorizontalAlignment.Left,
+											Padding = newUDim(0, 8),
+											SortOrder = Enum.SortOrder.LayoutOrder
+										})
+										
+										-- создаем 3 вкладки
+										local pickerTab = utility:create("TextButton", {
+											Name = "PickerTab",
+											Parent = tabsHolder,
+											BackgroundTransparency = 1,
+											BorderSizePixel = 0,
+											Size = newUDim2(0, 40, 1, 0),
+											FontFace = library.Font,
+											Text = "Picker",
+											TextColor3 = library.Theme["Accent"],
+											TextSize = 12,
+											AutoButtonColor = false,
+											ZIndex = 203
+										})
+										
+										utility:create("UIStroke", {
+											Parent = pickerTab,
+											Color = library.Theme["Text Border"],
+											Thickness = 1
+										})
+										
+										local lerpingTab = utility:create("TextButton", {
+											Name = "LerpingTab",
+											Parent = tabsHolder,
+											BackgroundTransparency = 1,
+											BorderSizePixel = 0,
+											Size = newUDim2(0, 45, 1, 0),
+											FontFace = library.Font,
+											Text = "Lerping",
+											TextColor3 = library.Theme["Text"],
+											TextSize = 12,
+											AutoButtonColor = false,
+											ZIndex = 203
+										})
+										
+										utility:create("UIStroke", {
+											Parent = lerpingTab,
+											Color = library.Theme["Text Border"],
+											Thickness = 1
+										})
+										
+										local colorsTab = utility:create("TextButton", {
+											Name = "ColorsTab",
+											Parent = tabsHolder,
+											BackgroundTransparency = 1,
+											BorderSizePixel = 0,
+											Size = newUDim2(0, 40, 1, 0),
+											FontFace = library.Font,
+											Text = "Colors",
+											TextColor3 = library.Theme["Text"],
+											TextSize = 12,
+											AutoButtonColor = false,
+											ZIndex = 203
+										})
+										
+										utility:create("UIStroke", {
+											Parent = colorsTab,
+											Color = library.Theme["Text Border"],
+											Thickness = 1
+										})
+										
+										-- логика переключения вкладок (пока просто визуальная)
+										local currentTab = pickerTab
+										
+										local function switchTab(tab)
+											if currentTab == tab then return end
+											
+											-- сбрасываем цвет предыдущей вкладки
+											utility:tween(currentTab, {TextColor3 = library.Theme["Text"]}, 0.2)
+											
+											-- подсвечиваем новую вкладку
+											utility:tween(tab, {TextColor3 = library.Theme["Accent"]}, 0.2)
+											currentTab = tab
+											
+											-- TODO: здесь будет логика переключения контента вкладок
+										end
+										
+										-- hover эффекты для вкладок
+										for _, tab in pairs({pickerTab, lerpingTab, colorsTab}) do
+											library.connections[#library.connections + 1] = tab.MouseEnter:Connect(function()
+												if currentTab ~= tab then
+													utility:tween(tab, {TextColor3 = library.Theme["Hovered Element"]}, 0.15)
+												end
+											end)
+											
+											library.connections[#library.connections + 1] = tab.MouseLeave:Connect(function()
+												if currentTab ~= tab then
+													utility:tween(tab, {TextColor3 = library.Theme["Text"]}, 0.15)
+												end
+											end)
+										end
+										
+										library.connections[#library.connections + 1] = pickerTab.MouseButton1Click:Connect(function()
+											switchTab(pickerTab)
+										end)
+										
+										library.connections[#library.connections + 1] = lerpingTab.MouseButton1Click:Connect(function()
+											switchTab(lerpingTab)
+										end)
+										
+										library.connections[#library.connections + 1] = colorsTab.MouseButton1Click:Connect(function()
+											switchTab(colorsTab)
+										end)
 										
 										-- палитра saturation/value
 										local paletteContainer = utility:create("TextButton", {
@@ -1276,8 +1426,8 @@ function library:CreateWindow(properties)
 											Parent = windowBackground,
 											BackgroundColor3 = library.Theme["Border"],
 											BorderSizePixel = 0,
-											Position = newUDim2(0, 3, 0, 16),
-											Size = newUDim2(1, -21, 1, -76),
+											Position = newUDim2(0, 3, 0, 40),
+											Size = newUDim2(1, -21, 1, -100),
 											AutoButtonColor = false,
 											Text = "",
 											ZIndex = 201
@@ -1796,6 +1946,12 @@ function library:CreateWindow(properties)
 									colorpicker.alphaPicker = alphaPicker
 									colorpicker.rgbBox = rgbBox
 									colorpicker.hexBox = hexBox
+									colorpicker.tabs = {
+										picker = pickerTab,
+										lerping = lerpingTab,
+										colors = colorsTab
+									}
+									colorpicker.currentTab = pickerTab
 								end
 								
 								-- dragging для colorpicker окна
