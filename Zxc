@@ -2990,6 +2990,262 @@ function library:CreateWindow(properties)
 								return slider
 							end
 							
+							-- AddTextbox для секции
+							function section:AddTextbox(properties)
+								properties = properties or {}
+								
+								local textbox = {
+									name = properties.Name or "Textbox",
+									flag = properties.Flag or properties.Name or "Textbox",
+									placeholder = properties.Placeholder or "...",
+									default = properties.Default or "",
+									callback = properties.Callback or function() end,
+									value = "",
+									section = section
+								}
+								
+								local textboxContainer, textboxBackground, textboxInput
+								
+								do -- // Textbox UI
+									-- контейнер textbox
+									textboxContainer = utility:create("Frame", {
+										Name = "TextboxContainer",
+										Parent = section.container,
+										BackgroundTransparency = 1,
+										Size = newUDim2(1, 0, 0, 34),
+										ZIndex = 104
+									})
+									
+									-- текст названия
+									local textboxLabel = utility:create("TextLabel", {
+										Name = "Label",
+										Parent = textboxContainer,
+										BackgroundTransparency = 1,
+										Size = newUDim2(1, 0, 0, 13),
+										FontFace = library.Font,
+										Text = textbox.name,
+										TextColor3 = library.Theme["Text"],
+										TextSize = 12,
+										TextXAlignment = Enum.TextXAlignment.Left,
+										ZIndex = 104
+									})
+									
+									utility:create("UIStroke", {
+										Parent = textboxLabel,
+										Color = library.Theme["Text Border"],
+										Thickness = 1,
+										LineJoinMode = Enum.LineJoinMode.Miter
+									})
+									
+									-- background (outline)
+									textboxBackground = utility:create("Frame", {
+										Name = "Background",
+										Parent = textboxContainer,
+										BackgroundColor3 = library.Theme["Element"],
+										BorderColor3 = library.Theme["Border"],
+										BorderSizePixel = 2,
+										Position = newUDim2(0, 0, 1, 0),
+										AnchorPoint = newVector2(0, 1),
+										Size = newUDim2(1, 0, 0, 17),
+										ZIndex = 104
+									})
+									
+									utility:create("UIGradient", {
+										Parent = textboxBackground,
+										Rotation = 90,
+										Color = newColorSequence({
+											newColorSequenceKeypoint(0, fromRGB(255, 255, 255)),
+											newColorSequenceKeypoint(1, fromRGB(100, 100, 100))
+										})
+									})
+									
+									utility:create("UIStroke", {
+										Parent = textboxBackground,
+										ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+										Color = library.Theme["Outline"],
+										Thickness = 1,
+										LineJoinMode = Enum.LineJoinMode.Miter
+									})
+									
+									-- textbox input
+									textboxInput = utility:create("TextBox", {
+										Name = "Input",
+										Parent = textboxBackground,
+										BackgroundTransparency = 1,
+										Size = newUDim2(1, 0, 1, 0),
+										FontFace = library.Font,
+										Text = "",
+										PlaceholderText = textbox.placeholder,
+										PlaceholderColor3 = fromRGB(178, 178, 178),
+										TextColor3 = library.Theme["Text"],
+										TextSize = 12,
+										TextXAlignment = Enum.TextXAlignment.Left,
+										ClearTextOnFocus = false,
+										ZIndex = 105
+									})
+									
+									utility:create("UIPadding", {
+										Parent = textboxInput,
+										PaddingLeft = newUDim(0, 5),
+										PaddingBottom = newUDim(0, 3)
+									})
+									
+									utility:create("UIStroke", {
+										Parent = textboxInput,
+										Color = library.Theme["Text Border"],
+										Thickness = 1,
+										LineJoinMode = Enum.LineJoinMode.Miter
+									})
+									
+									textbox.container = textboxContainer
+									textbox.background = textboxBackground
+									textbox.input = textboxInput
+								end
+								
+								do -- // Textbox Functions
+									function textbox:Set(value)
+										textbox.value = value or ""
+										textbox.input.Text = textbox.value
+										library.flags[textbox.flag] = textbox.value
+										textbox.callback(textbox.value)
+									end
+									
+									function textbox:Get()
+										return textbox.value
+									end
+								end
+								
+								-- hover effect
+								library.connections[#library.connections + 1] = textboxBackground.MouseEnter:Connect(function()
+									utility:tween(textboxBackground, {BackgroundColor3 = library.Theme["Hovered Element"]}, 0.2)
+								end)
+								
+								library.connections[#library.connections + 1] = textboxBackground.MouseLeave:Connect(function()
+									utility:tween(textboxBackground, {BackgroundColor3 = library.Theme["Element"]}, 0.2)
+								end)
+								
+								-- focus events
+								library.connections[#library.connections + 1] = textboxInput.Focused:Connect(function()
+									utility:tween(textboxInput, {TextColor3 = library.Theme["Accent"]}, 0.2)
+								end)
+								
+								library.connections[#library.connections + 1] = textboxInput.FocusLost:Connect(function()
+									utility:tween(textboxInput, {TextColor3 = library.Theme["Text"]}, 0.2)
+									textbox:Set(textboxInput.Text)
+								end)
+								
+								-- set default
+								if textbox.default ~= "" then
+									textbox:Set(textbox.default)
+								end
+								
+								return textbox
+							end
+							
+							-- AddLabel для секции
+							function section:AddLabel(properties)
+								properties = properties or {}
+								
+								local label = {
+									name = properties.Name or properties.Text or "Label",
+									section = section
+								}
+								
+								local labelFrame, labelText, rightHolder
+								
+								do -- // Label UI
+									-- основной контейнер
+									labelFrame = utility:create("TextLabel", {
+										Name = "Label",
+										Parent = section.container,
+										BackgroundTransparency = 1,
+										Size = newUDim2(1, -8, 0, 12),
+										AutomaticSize = Enum.AutomaticSize.Y,
+										FontFace = library.Font,
+										Text = "",
+										TextColor3 = library.Theme["Text"],
+										TextSize = 12,
+										TextXAlignment = Enum.TextXAlignment.Left,
+										TextYAlignment = Enum.TextYAlignment.Top,
+										ZIndex = 104
+									})
+									
+									utility:create("UIStroke", {
+										Parent = labelFrame,
+										Color = library.Theme["Text Border"],
+										Thickness = 1,
+										LineJoinMode = Enum.LineJoinMode.Miter
+									})
+									
+									-- left components (текст)
+									local leftComponents = utility:create("Frame", {
+										Name = "LeftComponents",
+										Parent = labelFrame,
+										BackgroundTransparency = 1,
+										Position = newUDim2(0, 2, 0, -1),
+										Size = newUDim2(0, 0, 0, 14),
+										ZIndex = 104
+									})
+									
+									labelText = utility:create("TextLabel", {
+										Name = "Text",
+										Parent = leftComponents,
+										BackgroundTransparency = 1,
+										AutomaticSize = Enum.AutomaticSize.Y,
+										FontFace = library.Font,
+										Text = label.name,
+										TextColor3 = library.Theme["Text"],
+										TextSize = 12,
+										TextXAlignment = Enum.TextXAlignment.Left,
+										ZIndex = 104
+									})
+									
+									utility:create("UIStroke", {
+										Parent = labelText,
+										Color = library.Theme["Text Border"],
+										Thickness = 1,
+										LineJoinMode = Enum.LineJoinMode.Miter
+									})
+									
+									-- right holder для дополнительных элементов
+									rightHolder = utility:create("Frame", {
+										Name = "RightHolder",
+										Parent = labelFrame,
+										BackgroundTransparency = 1,
+										AnchorPoint = newVector2(1, 0),
+										Position = newUDim2(1, -1, 0, 1),
+										Size = newUDim2(0, 0, 0, 12),
+										ZIndex = 104
+									})
+									
+									utility:create("UIListLayout", {
+										Parent = rightHolder,
+										FillDirection = Enum.FillDirection.Horizontal,
+										HorizontalAlignment = Enum.HorizontalAlignment.Right,
+										VerticalAlignment = Enum.VerticalAlignment.Center,
+										Padding = newUDim(0, 4),
+										SortOrder = Enum.SortOrder.LayoutOrder
+									})
+									
+									label.frame = labelFrame
+									label.text = labelText
+									label.rightHolder = rightHolder
+								end
+								
+								do -- // Label Functions
+									function label:SetText(text)
+										label.name = text
+										labelText.Text = text
+									end
+									
+									function label:GetText()
+										return label.name
+									end
+								end
+								
+								return label
+							end
+							
 							-- AddDropdown для секции
 							function section:AddDropdown(properties)
 								properties = properties or {}
@@ -3910,6 +4166,262 @@ function library:CreateWindow(properties)
 				return slider
 			end
 			
+			-- AddTextbox для секции (таб без подвкладок)
+			function section:AddTextbox(properties)
+				properties = properties or {}
+				
+				local textbox = {
+					name = properties.Name or "Textbox",
+					flag = properties.Flag or properties.Name or "Textbox",
+					placeholder = properties.Placeholder or "...",
+					default = properties.Default or "",
+					callback = properties.Callback or function() end,
+					value = "",
+					section = section
+				}
+				
+				local textboxContainer, textboxBackground, textboxInput
+				
+				do -- // Textbox UI
+					-- контейнер textbox
+					textboxContainer = utility:create("Frame", {
+						Name = "TextboxContainer",
+						Parent = section.container,
+						BackgroundTransparency = 1,
+						Size = newUDim2(1, 0, 0, 34),
+						ZIndex = 104
+					})
+					
+					-- текст названия
+					local textboxLabel = utility:create("TextLabel", {
+						Name = "Label",
+						Parent = textboxContainer,
+						BackgroundTransparency = 1,
+						Size = newUDim2(1, 0, 0, 13),
+						FontFace = library.Font,
+						Text = textbox.name,
+						TextColor3 = library.Theme["Text"],
+						TextSize = 12,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						ZIndex = 104
+					})
+					
+					utility:create("UIStroke", {
+						Parent = textboxLabel,
+						Color = library.Theme["Text Border"],
+						Thickness = 1,
+						LineJoinMode = Enum.LineJoinMode.Miter
+					})
+					
+					-- background (outline)
+					textboxBackground = utility:create("Frame", {
+						Name = "Background",
+						Parent = textboxContainer,
+						BackgroundColor3 = library.Theme["Element"],
+						BorderColor3 = library.Theme["Border"],
+						BorderSizePixel = 2,
+						Position = newUDim2(0, 0, 1, 0),
+						AnchorPoint = newVector2(0, 1),
+						Size = newUDim2(1, 0, 0, 17),
+						ZIndex = 104
+					})
+					
+					utility:create("UIGradient", {
+						Parent = textboxBackground,
+						Rotation = 90,
+						Color = newColorSequence({
+							newColorSequenceKeypoint(0, fromRGB(255, 255, 255)),
+							newColorSequenceKeypoint(1, fromRGB(100, 100, 100))
+						})
+					})
+					
+					utility:create("UIStroke", {
+						Parent = textboxBackground,
+						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+						Color = library.Theme["Outline"],
+						Thickness = 1,
+						LineJoinMode = Enum.LineJoinMode.Miter
+					})
+					
+					-- textbox input
+					textboxInput = utility:create("TextBox", {
+						Name = "Input",
+						Parent = textboxBackground,
+						BackgroundTransparency = 1,
+						Size = newUDim2(1, 0, 1, 0),
+						FontFace = library.Font,
+						Text = "",
+						PlaceholderText = textbox.placeholder,
+						PlaceholderColor3 = fromRGB(178, 178, 178),
+						TextColor3 = library.Theme["Text"],
+						TextSize = 12,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						ClearTextOnFocus = false,
+						ZIndex = 105
+					})
+					
+					utility:create("UIPadding", {
+						Parent = textboxInput,
+						PaddingLeft = newUDim(0, 5),
+						PaddingBottom = newUDim(0, 3)
+					})
+					
+					utility:create("UIStroke", {
+						Parent = textboxInput,
+						Color = library.Theme["Text Border"],
+						Thickness = 1,
+						LineJoinMode = Enum.LineJoinMode.Miter
+					})
+					
+					textbox.container = textboxContainer
+					textbox.background = textboxBackground
+					textbox.input = textboxInput
+				end
+				
+				do -- // Textbox Functions
+					function textbox:Set(value)
+						textbox.value = value or ""
+						textbox.input.Text = textbox.value
+						library.flags[textbox.flag] = textbox.value
+						textbox.callback(textbox.value)
+					end
+					
+					function textbox:Get()
+						return textbox.value
+					end
+				end
+				
+				-- hover effect
+				library.connections[#library.connections + 1] = textboxBackground.MouseEnter:Connect(function()
+					utility:tween(textboxBackground, {BackgroundColor3 = library.Theme["Hovered Element"]}, 0.2)
+				end)
+				
+				library.connections[#library.connections + 1] = textboxBackground.MouseLeave:Connect(function()
+					utility:tween(textboxBackground, {BackgroundColor3 = library.Theme["Element"]}, 0.2)
+				end)
+				
+				-- focus events
+				library.connections[#library.connections + 1] = textboxInput.Focused:Connect(function()
+					utility:tween(textboxInput, {TextColor3 = library.Theme["Accent"]}, 0.2)
+				end)
+				
+				library.connections[#library.connections + 1] = textboxInput.FocusLost:Connect(function()
+					utility:tween(textboxInput, {TextColor3 = library.Theme["Text"]}, 0.2)
+					textbox:Set(textboxInput.Text)
+				end)
+				
+				-- set default
+				if textbox.default ~= "" then
+					textbox:Set(textbox.default)
+				end
+				
+				return textbox
+			end
+			
+			-- AddLabel для секции (таб без подвкладок)
+			function section:AddLabel(properties)
+				properties = properties or {}
+				
+				local label = {
+					name = properties.Name or properties.Text or "Label",
+					section = section
+				}
+				
+				local labelFrame, labelText, rightHolder
+				
+				do -- // Label UI
+					-- основной контейнер
+					labelFrame = utility:create("TextLabel", {
+						Name = "Label",
+						Parent = section.container,
+						BackgroundTransparency = 1,
+						Size = newUDim2(1, -8, 0, 12),
+						AutomaticSize = Enum.AutomaticSize.Y,
+						FontFace = library.Font,
+						Text = "",
+						TextColor3 = library.Theme["Text"],
+						TextSize = 12,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						TextYAlignment = Enum.TextYAlignment.Top,
+						ZIndex = 104
+					})
+					
+					utility:create("UIStroke", {
+						Parent = labelFrame,
+						Color = library.Theme["Text Border"],
+						Thickness = 1,
+						LineJoinMode = Enum.LineJoinMode.Miter
+					})
+					
+					-- left components (текст)
+					local leftComponents = utility:create("Frame", {
+						Name = "LeftComponents",
+						Parent = labelFrame,
+						BackgroundTransparency = 1,
+						Position = newUDim2(0, 2, 0, -1),
+						Size = newUDim2(0, 0, 0, 14),
+						ZIndex = 104
+					})
+					
+					labelText = utility:create("TextLabel", {
+						Name = "Text",
+						Parent = leftComponents,
+						BackgroundTransparency = 1,
+						AutomaticSize = Enum.AutomaticSize.Y,
+						FontFace = library.Font,
+						Text = label.name,
+						TextColor3 = library.Theme["Text"],
+						TextSize = 12,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						ZIndex = 104
+					})
+					
+					utility:create("UIStroke", {
+						Parent = labelText,
+						Color = library.Theme["Text Border"],
+						Thickness = 1,
+						LineJoinMode = Enum.LineJoinMode.Miter
+					})
+					
+					-- right holder для дополнительных элементов
+					rightHolder = utility:create("Frame", {
+						Name = "RightHolder",
+						Parent = labelFrame,
+						BackgroundTransparency = 1,
+						AnchorPoint = newVector2(1, 0),
+						Position = newUDim2(1, -1, 0, 1),
+						Size = newUDim2(0, 0, 0, 12),
+						ZIndex = 104
+					})
+					
+					utility:create("UIListLayout", {
+						Parent = rightHolder,
+						FillDirection = Enum.FillDirection.Horizontal,
+						HorizontalAlignment = Enum.HorizontalAlignment.Right,
+						VerticalAlignment = Enum.VerticalAlignment.Center,
+						Padding = newUDim(0, 4),
+						SortOrder = Enum.SortOrder.LayoutOrder
+					})
+					
+					label.frame = labelFrame
+					label.text = labelText
+					label.rightHolder = rightHolder
+				end
+				
+				do -- // Label Functions
+					function label:SetText(text)
+						label.name = text
+						labelText.Text = text
+					end
+					
+					function label:GetText()
+						return label.name
+					end
+				end
+				
+				return label
+			end
+			
 			-- AddDropdown для секции (таб без подвкладок)
 			function section:AddDropdown(properties)
 				properties = properties or {}
@@ -4514,6 +5026,69 @@ do
 		Side = 2
 	})
 	
+	-- примеры textbox
+	movementSection:AddTextbox({
+		Name = "Walk Speed",
+		Flag = "WalkSpeed",
+		Placeholder = "Enter speed...",
+		Default = "16",
+		Callback = function(value)
+			print("Walk Speed:", value)
+		end
+	})
+	
+	movementSection:AddTextbox({
+		Name = "Jump Power",
+		Flag = "JumpPower",
+		Placeholder = "Enter power...",
+		Default = "50",
+		Callback = function(value)
+			print("Jump Power:", value)
+		end
+	})
+	
+	utilitySection:AddTextbox({
+		Name = "Player Name",
+		Flag = "PlayerName",
+		Placeholder = "Enter name...",
+		Default = "",
+		Callback = function(value)
+			print("Player Name:", value)
+		end
+	})
+	
+	utilitySection:AddTextbox({
+		Name = "Custom Message",
+		Flag = "CustomMessage",
+		Placeholder = "Type message...",
+		Default = "Hello World!",
+		Callback = function(value)
+			print("Custom Message:", value)
+		end
+	})
+	
+	-- примеры label
+	movementSection:AddLabel({
+		Text = "Movement Settings"
+	})
+	
+	movementSection:AddLabel({
+		Text = "Use these to modify player movement"
+	})
+	
+	utilitySection:AddLabel({
+		Text = "Utility Options"
+	})
+	
+	local dynamicLabel = utilitySection:AddLabel({
+		Text = "Status: Idle"
+	})
+	
+	-- пример изменения текста label
+	task.spawn(function()
+		task.wait(3)
+		dynamicLabel:SetText("Status: Active")
+	end)
 	
 	local settingsTab = window:CreateTab({
 		Text = "Settings",
