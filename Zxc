@@ -1041,10 +1041,32 @@ function library:CreateWindow(properties)
 										ZIndex = 104
 									})
 									
+									-- right holder для colorpicker/keybind элементов
+									local rightHolder = utility:create("Frame", {
+										Name = "RightHolder",
+										Parent = toggleButton,
+										BackgroundTransparency = 1,
+										AnchorPoint = newVector2(1, 0.5),
+										Position = newUDim2(1, -2, 0.5, 0),
+										Size = newUDim2(0, 0, 0, 12),
+										ZIndex = 104
+									})
+									
+									utility:create("UIListLayout", {
+										Parent = rightHolder,
+										FillDirection = Enum.FillDirection.Horizontal,
+										HorizontalAlignment = Enum.HorizontalAlignment.Right,
+										VerticalAlignment = Enum.VerticalAlignment.Center,
+										Padding = newUDim(0, 4),
+										SortOrder = Enum.SortOrder.LayoutOrder
+									})
+									
 									-- index
 									toggle.button = toggleButton
 									toggle.indicator = indicator
 									toggle.text = toggleText
+									toggle.holder = toggleButton
+									toggle.rightHolder = rightHolder
 								end
 								
 								do -- // Toggle Functions
@@ -1105,43 +1127,18 @@ function library:CreateWindow(properties)
 									local colorButton, colorButtonFrame
 									
 									do -- // Colorpicker UI
-										-- кнопка colorpicker (справа от toggle) - прозрачный контейнер
+										-- outline (внешняя рамка)
 										colorButton = utility:create("TextButton", {
 											Name = "ColorButton",
-											Parent = toggle.button,
-											BackgroundTransparency = 1,
-											BorderColor3 = fromRGB(0, 0, 0),
+											Parent = toggle.rightHolder,
+											BackgroundColor3 = library.Theme["Outline"],
 											BorderSizePixel = 0,
-											AnchorPoint = newVector2(1, 0.5),
-											Position = newUDim2(1, -2, 0.5, 0),
 											Size = newUDim2(0, 12, 0, 10),
 											AutoButtonColor = false,
 											Text = "",
 											ZIndex = 105
 										})
 										
-										-- клеточки под кнопку для показа прозрачности
-										utility:create("ImageLabel", {
-											Parent = colorButton,
-											Image = "rbxassetid://18274452449",
-											ScaleType = Enum.ScaleType.Tile,
-											TileSize = newUDim2(0, 4, 0, 4),
-											BackgroundTransparency = 1,
-											Size = newUDim2(1, 0, 1, 0),
-											ZIndex = 104
-										})
-										
-										-- цветной слой поверх клеточек
-										colorButtonFrame = utility:create("Frame", {
-											Parent = colorButton,
-											BackgroundColor3 = colorpicker.default,
-											BackgroundTransparency = 1 - colorpicker.alpha,
-											BorderSizePixel = 0,
-											Size = newUDim2(1, 0, 1, 0),
-											ZIndex = 105
-										})
-										
-										-- outline для кнопки
 										utility:create("UIStroke", {
 											Parent = colorButton,
 											ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
@@ -1150,17 +1147,51 @@ function library:CreateWindow(properties)
 											LineJoinMode = Enum.LineJoinMode.Miter
 										})
 										
-										-- gradient для кнопки
-										utility:create("UIGradient", {
+										-- inline (средняя рамка)
+										local colorInline = utility:create("Frame", {
+											Name = "Inline",
 											Parent = colorButton,
-											Rotation = 90,
-											Color = newColorSequence({
-												newColorSequenceKeypoint(0, fromRGB(255, 255, 255)),
-												newColorSequenceKeypoint(1, fromRGB(127, 127, 127))
-											})
+											BackgroundColor3 = library.Theme["Border"],
+											BorderSizePixel = 0,
+											Position = newUDim2(0, 1, 0, 1),
+											Size = newUDim2(1, -2, 1, -2),
+											ZIndex = 105
+										})
+										
+										-- handler (внутренний контейнер)
+										local colorHandler = utility:create("Frame", {
+											Name = "Handler",
+											Parent = colorInline,
+											BackgroundColor3 = fromRGB(255, 255, 255),
+											BorderSizePixel = 0,
+											Position = newUDim2(0, 1, 0, 1),
+											Size = newUDim2(1, -2, 1, -2),
+											ZIndex = 105
+										})
+										
+										-- клеточки для показа прозрачности
+										utility:create("ImageLabel", {
+											Parent = colorHandler,
+											Image = "rbxassetid://18274452449",
+											ScaleType = Enum.ScaleType.Tile,
+											TileSize = newUDim2(0, 4, 0, 4),
+											BackgroundTransparency = 1,
+											Size = newUDim2(1, 0, 1, 0),
+											ZIndex = 105
+										})
+										
+										-- цветной слой поверх клеточек
+										colorButtonFrame = utility:create("Frame", {
+											Parent = colorHandler,
+											BackgroundColor3 = colorpicker.default,
+											BackgroundTransparency = 1 - colorpicker.alpha,
+											BorderSizePixel = 0,
+											Size = newUDim2(1, 0, 1, 0),
+											ZIndex = 106
 										})
 										
 										colorpicker.button = colorButton
+										colorpicker.colorFrame = colorButtonFrame
 									end
 									
 									do -- // Colorpicker Functions
@@ -1168,8 +1199,11 @@ function library:CreateWindow(properties)
 											colorpicker.color = color or fromRGB(255, 255, 255)
 											colorpicker.alpha = alpha or 1
 											
-											-- обновляем цвет кнопки
-											utility:tween(colorpicker.button, {BackgroundColor3 = colorpicker.color}, 0.2)
+											-- обновляем цвет и прозрачность
+											utility:tween(colorpicker.colorFrame, {
+												BackgroundColor3 = colorpicker.color,
+												BackgroundTransparency = 1 - colorpicker.alpha
+											}, 0.2)
 											
 											-- сохраняем в флаги
 											library.flags[colorpicker.flag] = {
@@ -1197,7 +1231,7 @@ function library:CreateWindow(properties)
 											BackgroundColor3 = library.Theme["Outline"],
 											BorderSizePixel = 0,
 											Position = newUDim2(0, 0, 0, 0),
-											Size = newUDim2(0, 179, 0, 258),
+											Size = newUDim2(0, 179, 0, 268),
 											Visible = false,
 											ZIndex = 200,
 											AutoButtonColor = false,
@@ -1269,156 +1303,6 @@ function library:CreateWindow(properties)
 											BackgroundTransparency = 1
 										})
 										
-										-- вкладки colorpicker
-										local tabsContainer = utility:create("Frame", {
-											Name = "TabsContainer",
-											Parent = windowBackground,
-											BackgroundColor3 = library.Theme["Outline"],
-											BorderSizePixel = 0,
-											Position = newUDim2(0, 3, 0, 18),
-											Size = newUDim2(1, -6, 0, 20),
-											ZIndex = 201
-										})
-										
-										local tabsInline = utility:create("Frame", {
-											Parent = tabsContainer,
-											BackgroundColor3 = library.Theme["Border"],
-											BorderSizePixel = 0,
-											Position = newUDim2(0, 1, 0, 1),
-											Size = newUDim2(1, -2, 1, -2),
-											ZIndex = 201
-										})
-										
-										local tabsBackground = utility:create("Frame", {
-											Parent = tabsInline,
-											BackgroundColor3 = library.Theme["Inline"],
-											BorderSizePixel = 0,
-											Position = newUDim2(0, 1, 0, 1),
-											Size = newUDim2(1, -2, 1, -2),
-											ZIndex = 201
-										})
-										
-										-- holder для кнопок вкладок
-										local tabsHolder = utility:create("Frame", {
-											Name = "TabsHolder",
-											Parent = tabsBackground,
-											BackgroundTransparency = 1,
-											Position = newUDim2(0, 4, 0, 0),
-											Size = newUDim2(1, -8, 1, 0),
-											ZIndex = 202
-										})
-										
-										utility:create("UIListLayout", {
-											Parent = tabsHolder,
-											FillDirection = Enum.FillDirection.Horizontal,
-											HorizontalAlignment = Enum.HorizontalAlignment.Left,
-											Padding = newUDim(0, 8),
-											SortOrder = Enum.SortOrder.LayoutOrder
-										})
-										
-										-- создаем 3 вкладки
-										local pickerTab = utility:create("TextButton", {
-											Name = "PickerTab",
-											Parent = tabsHolder,
-											BackgroundTransparency = 1,
-											BorderSizePixel = 0,
-											Size = newUDim2(0, 40, 1, 0),
-											FontFace = library.Font,
-											Text = "Picker",
-											TextColor3 = library.Theme["Accent"],
-											TextSize = 12,
-											AutoButtonColor = false,
-											ZIndex = 203
-										})
-										
-										utility:create("UIStroke", {
-											Parent = pickerTab,
-											Color = library.Theme["Text Border"],
-											Thickness = 1
-										})
-										
-										local lerpingTab = utility:create("TextButton", {
-											Name = "LerpingTab",
-											Parent = tabsHolder,
-											BackgroundTransparency = 1,
-											BorderSizePixel = 0,
-											Size = newUDim2(0, 45, 1, 0),
-											FontFace = library.Font,
-											Text = "Lerping",
-											TextColor3 = library.Theme["Text"],
-											TextSize = 12,
-											AutoButtonColor = false,
-											ZIndex = 203
-										})
-										
-										utility:create("UIStroke", {
-											Parent = lerpingTab,
-											Color = library.Theme["Text Border"],
-											Thickness = 1
-										})
-										
-										local colorsTab = utility:create("TextButton", {
-											Name = "ColorsTab",
-											Parent = tabsHolder,
-											BackgroundTransparency = 1,
-											BorderSizePixel = 0,
-											Size = newUDim2(0, 40, 1, 0),
-											FontFace = library.Font,
-											Text = "Colors",
-											TextColor3 = library.Theme["Text"],
-											TextSize = 12,
-											AutoButtonColor = false,
-											ZIndex = 203
-										})
-										
-										utility:create("UIStroke", {
-											Parent = colorsTab,
-											Color = library.Theme["Text Border"],
-											Thickness = 1
-										})
-										
-										-- логика переключения вкладок (пока просто визуальная)
-										local currentTab = pickerTab
-										
-										local function switchTab(tab)
-											if currentTab == tab then return end
-											
-											-- сбрасываем цвет предыдущей вкладки
-											utility:tween(currentTab, {TextColor3 = library.Theme["Text"]}, 0.2)
-											
-											-- подсвечиваем новую вкладку
-											utility:tween(tab, {TextColor3 = library.Theme["Accent"]}, 0.2)
-											currentTab = tab
-											
-											-- TODO: здесь будет логика переключения контента вкладок
-										end
-										
-										-- hover эффекты для вкладок
-										for _, tab in pairs({pickerTab, lerpingTab, colorsTab}) do
-											library.connections[#library.connections + 1] = tab.MouseEnter:Connect(function()
-												if currentTab ~= tab then
-													utility:tween(tab, {TextColor3 = library.Theme["Hovered Element"]}, 0.15)
-												end
-											end)
-											
-											library.connections[#library.connections + 1] = tab.MouseLeave:Connect(function()
-												if currentTab ~= tab then
-													utility:tween(tab, {TextColor3 = library.Theme["Text"]}, 0.15)
-												end
-											end)
-										end
-										
-										library.connections[#library.connections + 1] = pickerTab.MouseButton1Click:Connect(function()
-											switchTab(pickerTab)
-										end)
-										
-										library.connections[#library.connections + 1] = lerpingTab.MouseButton1Click:Connect(function()
-											switchTab(lerpingTab)
-										end)
-										
-										library.connections[#library.connections + 1] = colorsTab.MouseButton1Click:Connect(function()
-											switchTab(colorsTab)
-										end)
 										
 										-- палитра saturation/value
 										local paletteContainer = utility:create("TextButton", {
@@ -1426,8 +1310,8 @@ function library:CreateWindow(properties)
 											Parent = windowBackground,
 											BackgroundColor3 = library.Theme["Border"],
 											BorderSizePixel = 0,
-											Position = newUDim2(0, 3, 0, 40),
-											Size = newUDim2(1, -21, 1, -100),
+											Position = newUDim2(0, 3, 0, 16),
+											Size = newUDim2(1, -21, 1, -76),
 											AutoButtonColor = false,
 											Text = "",
 											ZIndex = 201
@@ -1930,6 +1814,285 @@ function library:CreateWindow(properties)
 											utility:tween(hexBackground, {BackgroundColor3 = library.Theme["Element"]}, 0.2)
 										end)
 										
+										-- дропдаун с анимациями (Rainbow, Breathing)
+										local animationsDropdown = utility:create("Frame", {
+											Name = "AnimationsDropdown",
+											Parent = windowBackground,
+											BackgroundColor3 = library.Theme["Outline"],
+											BorderSizePixel = 0,
+											Position = newUDim2(0, 3, 1, -21),
+											Size = newUDim2(1, -6, 0, 18),
+											ZIndex = 201
+										})
+										
+										local animInline = utility:create("Frame", {
+											Parent = animationsDropdown,
+											BackgroundColor3 = library.Theme["Border"],
+											BorderSizePixel = 0,
+											Position = newUDim2(0, 1, 0, 1),
+											Size = newUDim2(1, -2, 1, -2),
+											ZIndex = 201
+										})
+										
+										local animInlineInline = utility:create("Frame", {
+											Parent = animInline,
+											BackgroundColor3 = library.Theme["Outline"],
+											BorderSizePixel = 0,
+											Position = newUDim2(0, 1, 0, 1),
+											Size = newUDim2(1, -2, 1, -2),
+											ZIndex = 201
+										})
+										
+										local animBackground = utility:create("Frame", {
+											Parent = animInlineInline,
+											BackgroundColor3 = library.Theme["Element"],
+											BorderSizePixel = 0,
+											Position = newUDim2(0, 1, 0, 1),
+											Size = newUDim2(1, -2, 1, -2),
+											ZIndex = 201,
+											ClipsDescendants = true
+										})
+										
+										-- градиент для background
+										utility:create("UIGradient", {
+											Parent = animBackground,
+											Rotation = 90,
+											Color = newColorSequence({
+												newColorSequenceKeypoint(0, library.Theme["Element"]),
+												newColorSequenceKeypoint(1, library.Theme["Background"])
+											})
+										})
+										
+										-- fading эффект справа
+										local animFading = utility:create("Frame", {
+											Parent = animBackground,
+											BackgroundColor3 = fromRGB(255, 255, 255),
+											BorderSizePixel = 0,
+											AnchorPoint = newVector2(1, 0),
+											Position = newUDim2(1, 0, 0, 0),
+											Size = newUDim2(0, 50, 1, 0),
+											ZIndex = 202
+										})
+										
+										utility:create("UIGradient", {
+											Parent = animFading,
+											Color = newColorSequence({
+												newColorSequenceKeypoint(0, library.Theme["Element"]),
+												newColorSequenceKeypoint(1, library.Theme["Background"])
+											}),
+											Transparency = newNumberSequence({
+												newNumberSequenceKeypoint(0, 1),
+												newNumberSequenceKeypoint(0.82, 0),
+												newNumberSequenceKeypoint(1, 0)
+											})
+										})
+										
+										-- кнопка для клика
+										local animDropdownButton = utility:create("TextButton", {
+											Name = "AnimDropdownButton",
+											Parent = animBackground,
+											BackgroundTransparency = 1,
+											BorderSizePixel = 0,
+											Size = newUDim2(1, 0, 1, 0),
+											AutoButtonColor = false,
+											Text = "",
+											ZIndex = 203
+										})
+										
+										-- текст выбранных анимаций
+										local animValueText = utility:create("TextLabel", {
+											Name = "AnimValue",
+											Parent = animDropdownButton,
+											BackgroundTransparency = 1,
+											Position = newUDim2(0, 2, 0, -1),
+											Size = newUDim2(1, -12, 1, 0),
+											FontFace = library.Font,
+											Text = "None",
+											TextColor3 = library.Theme["Text"],
+											TextSize = 12,
+											TextXAlignment = Enum.TextXAlignment.Left,
+											TextTruncate = Enum.TextTruncate.AtEnd,
+											ZIndex = 203
+										})
+										
+										utility:create("UIStroke", {
+											Parent = animValueText,
+											Color = library.Theme["Text Border"],
+											Thickness = 1
+										})
+										
+										-- иконка +/-
+										local animIcon = utility:create("TextLabel", {
+											Name = "AnimIcon",
+											Parent = animDropdownButton,
+											BackgroundTransparency = 1,
+											Position = newUDim2(1, -10, 0, -1),
+											Size = newUDim2(0, 10, 1, 0),
+											FontFace = library.Font,
+											Text = "+",
+											TextColor3 = library.Theme["Text"],
+											TextSize = 12,
+											TextXAlignment = Enum.TextXAlignment.Center,
+											ZIndex = 203
+										})
+										
+										utility:create("UIStroke", {
+											Parent = animIcon,
+											Color = library.Theme["Text Border"],
+											Thickness = 1
+										})
+										
+										-- holder для опций
+										local animOptionsHolder = utility:create("Frame", {
+											Name = "AnimOptionsHolder",
+											Parent = animationsDropdown,
+											BackgroundColor3 = library.Theme["Inline"],
+											BorderSizePixel = 0,
+											Position = newUDim2(0, 0, 1, 2),
+											Size = newUDim2(1, 0, 0, 0),
+											AutomaticSize = Enum.AutomaticSize.Y,
+											Visible = false,
+											ZIndex = 250
+										})
+										
+										utility:create("UIStroke", {
+											Parent = animOptionsHolder,
+											ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+											Color = library.Theme["Outline"],
+											Thickness = 1
+										})
+										
+										utility:create("UIListLayout", {
+											Parent = animOptionsHolder,
+											SortOrder = Enum.SortOrder.LayoutOrder
+										})
+										
+										utility:create("UIPadding", {
+											Parent = animOptionsHolder,
+											PaddingBottom = newUDim(0, 2)
+										})
+										
+										-- состояние дропдауна
+										colorpicker.animationsOpen = false
+										colorpicker.selectedAnimations = {}
+										
+										-- функция обновления текста
+										local function updateAnimText()
+											if #colorpicker.selectedAnimations > 0 then
+												animValueText.Text = table.concat(colorpicker.selectedAnimations, ", ")
+											else
+												animValueText.Text = "None"
+											end
+										end
+										
+										-- создаем опции Rainbow и Breathing
+										local animOptions = {"Rainbow", "Breathing"}
+										local optionButtons = {}
+										
+										for _, optionName in ipairs(animOptions) do
+											local optionButton = utility:create("TextButton", {
+												Name = "AnimOption",
+												Parent = animOptionsHolder,
+												BackgroundTransparency = 1,
+												Size = newUDim2(1, 0, 0, 12),
+												AutoButtonColor = false,
+												Text = "",
+												ZIndex = 251
+											})
+											
+											local optionText = utility:create("TextLabel", {
+												Name = "OptionText",
+												Parent = optionButton,
+												BackgroundTransparency = 1,
+												Position = newUDim2(0, 3, 0, 0),
+												Size = newUDim2(1, -3, 1, 0),
+												FontFace = library.Font,
+												Text = optionName,
+												TextColor3 = library.Theme["Text"],
+												TextTransparency = 0.48,
+												TextSize = 12,
+												TextXAlignment = Enum.TextXAlignment.Left,
+												ZIndex = 252
+											})
+											
+											utility:create("UIStroke", {
+												Parent = optionText,
+												Color = library.Theme["Text Border"],
+												Thickness = 1
+											})
+											
+											optionButtons[optionName] = {
+												button = optionButton,
+												text = optionText,
+												selected = false
+											}
+											
+											-- клик по опции
+											library.connections[#library.connections + 1] = optionButton.MouseButton1Click:Connect(function()
+												local optionData = optionButtons[optionName]
+												optionData.selected = not optionData.selected
+												
+												if optionData.selected then
+													utility:tween(optionData.text, {TextColor3 = library.Theme["Accent"], TextTransparency = 0}, 0.2)
+													table.insert(colorpicker.selectedAnimations, optionName)
+												else
+													utility:tween(optionData.text, {TextColor3 = library.Theme["Text"], TextTransparency = 0.48}, 0.2)
+													local index = table.find(colorpicker.selectedAnimations, optionName)
+													if index then
+														table.remove(colorpicker.selectedAnimations, index)
+													end
+												end
+												
+												updateAnimText()
+											end)
+										end
+										
+										-- hover эффекты для дропдауна
+										library.connections[#library.connections + 1] = animationsDropdown.MouseEnter:Connect(function()
+											utility:tween(animBackground, {BackgroundColor3 = library.Theme["Hovered Element"]}, 0.2)
+										end)
+										
+										library.connections[#library.connections + 1] = animationsDropdown.MouseLeave:Connect(function()
+											utility:tween(animBackground, {BackgroundColor3 = library.Theme["Element"]}, 0.2)
+										end)
+										
+										-- клик по кнопке дропдауна
+										library.connections[#library.connections + 1] = animDropdownButton.MouseButton1Click:Connect(function()
+											colorpicker.animationsOpen = not colorpicker.animationsOpen
+											animOptionsHolder.Visible = colorpicker.animationsOpen
+											animIcon.Text = colorpicker.animationsOpen and "-" or "+"
+										end)
+										
+										-- закрытие дропдауна при клике вне его
+										library.connections[#library.connections + 1] = uis.InputBegan:Connect(function(input)
+											if input.UserInputType == Enum.UserInputType.MouseButton1 then
+												if colorpicker.animationsOpen then
+													local mousePos = uis:GetMouseLocation() - guiService:GetGuiInset()
+													local dropdownPos = animOptionsHolder.AbsolutePosition
+													local dropdownSize = animOptionsHolder.AbsoluteSize
+													local buttonPos = animDropdownButton.AbsolutePosition
+													local buttonSize = animDropdownButton.AbsoluteSize
+													
+													-- проверяем клик вне дропдауна и кнопки
+													local isOutsideDropdown = mousePos.X < dropdownPos.X or mousePos.X > dropdownPos.X + dropdownSize.X or
+																			  mousePos.Y < dropdownPos.Y or mousePos.Y > dropdownPos.Y + dropdownSize.Y
+													
+													local isOutsideButton = mousePos.X < buttonPos.X or mousePos.X > buttonPos.X + buttonSize.X or
+																		   mousePos.Y < buttonPos.Y or mousePos.Y > buttonPos.Y + buttonSize.Y
+													
+													if isOutsideDropdown and isOutsideButton and animOptionsHolder.Visible then
+														colorpicker.animationsOpen = false
+														animOptionsHolder.Visible = false
+														animIcon.Text = "+"
+													end
+												end
+											end
+										end)
+										
+										-- сохраняем ссылки
+										colorpicker.animationsDropdown = animationsDropdown
+										colorpicker.animOptionsHolder = animOptionsHolder
+										
 										-- сохраняем ссылки
 									colorpicker.button = colorButton
 									colorpicker.buttonFrame = colorButtonFrame
@@ -1946,12 +2109,6 @@ function library:CreateWindow(properties)
 									colorpicker.alphaPicker = alphaPicker
 									colorpicker.rgbBox = rgbBox
 									colorpicker.hexBox = hexBox
-									colorpicker.tabs = {
-										picker = pickerTab,
-										lerping = lerpingTab,
-										colors = colorsTab
-									}
-									colorpicker.currentTab = pickerTab
 								end
 								
 								-- dragging для colorpicker окна
@@ -2177,7 +2334,468 @@ function library:CreateWindow(properties)
 									-- set default
 									colorpicker:Set(colorpicker.default, colorpicker.alpha)
 									
+									-- цикл анимаций (Rainbow и Breathing)
+									task.spawn(function()
+										while true do
+											task.wait()
+											
+											-- проверяем есть ли выбранные анимации
+											if #colorpicker.selectedAnimations == 0 then
+												continue
+											end
+											
+											-- вычисляем синусоиду для плавной анимации
+											local sine = math.abs(math.sin(tick()))
+											
+											-- проверяем какие анимации активны
+											local hasRainbow = table.find(colorpicker.selectedAnimations, "Rainbow")
+											local hasBreathing = table.find(colorpicker.selectedAnimations, "Breathing")
+											
+											-- применяем Rainbow (меняет Hue)
+											local newHue = hasRainbow and sine or colorpicker.hue
+											
+											-- применяем Breathing (меняет Alpha)
+											local newAlpha = hasBreathing and sine or colorpicker.alpha
+											
+											-- обновляем цвет если есть активные анимации
+											if hasRainbow or hasBreathing then
+												colorpicker.hue = newHue
+												colorpicker.alpha = newAlpha
+												
+												-- обновляем визуал
+												colorpicker.color = fromHSV(colorpicker.hue, colorpicker.saturation, colorpicker.value)
+												
+												-- обновляем цвет и прозрачность кнопки
+												colorpicker.buttonFrame.BackgroundColor3 = colorpicker.color
+												colorpicker.buttonFrame.BackgroundTransparency = 1 - colorpicker.alpha
+												
+												-- обновляем цвет палитры (hue)
+												local hueColor = fromHSV(colorpicker.hue, 1, 1)
+												colorpicker.palette.BackgroundColor3 = hueColor
+												colorpicker.alphaColorFrame.BackgroundColor3 = colorpicker.color
+												
+												-- обновляем позицию пикеров
+												colorpicker.palettePicker.Position = newUDim2(colorpicker.saturation, -1, 1 - colorpicker.value, -1)
+												colorpicker.huePicker.Position = newUDim2(colorpicker.hue, 1, 0, 1)
+												colorpicker.alphaPicker.Position = newUDim2(0, 1, colorpicker.alpha, 1)
+												
+												-- обновляем textbox'ы (только если не в фокусе)
+												if not colorpicker.rgbBox:IsFocused() then
+													local r = floor(colorpicker.color.R * 255)
+													local g = floor(colorpicker.color.G * 255)
+													local b = floor(colorpicker.color.B * 255)
+													colorpicker.rgbBox.Text = r .. ", " .. g .. ", " .. b
+												end
+												
+												if not colorpicker.hexBox:IsFocused() then
+													colorpicker.hexBox.Text = "#" .. colorpicker.color:ToHex()
+												end
+												
+												-- сохраняем в флаги
+												library.flags[colorpicker.flag] = {
+													Color = colorpicker.color,
+													Alpha = colorpicker.alpha,
+													HexValue = "#" .. colorpicker.color:ToHex()
+												}
+												
+												-- callback
+												colorpicker.callback(colorpicker.color, colorpicker.alpha)
+											end
+										end
+									end)
+									
 									return colorpicker
+								end
+								
+								-- AddKeybind для toggle
+								function toggle:AddKeybind(properties)
+									properties = properties or {}
+									
+									local keybind = {
+										name = properties.Name or toggle.name,
+										flag = properties.Flag or properties.Name or toggle.name .. "_Keybind",
+										default = properties.Key or nil,
+										mode = properties.Mode or "Toggle",
+										callback = properties.Callback or function() end,
+										active = false,
+										binding = false,
+										key = properties.Key or nil,
+										section = toggle.section
+									}
+									
+									-- создаем кнопку keybind (в rightHolder) - outline
+									local keybindButton = utility:create("TextButton", {
+										Name = "KeybindOutline",
+										Parent = toggle.rightHolder,
+										BackgroundColor3 = library.Theme["Outline"],
+										BorderSizePixel = 0,
+										Size = newUDim2(0, 24, 0, 10),
+										AutoButtonColor = false,
+										Text = "",
+										ZIndex = 105
+									})
+									
+									utility:create("UIStroke", {
+										Parent = keybindButton,
+										ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+										Color = library.Theme["Outline"],
+										Thickness = 1,
+										LineJoinMode = Enum.LineJoinMode.Miter
+									})
+									
+									-- inline рамка
+									local keybindInline = utility:create("Frame", {
+										Name = "Inline",
+										Parent = keybindButton,
+										BackgroundColor3 = library.Theme["Border"],
+										BorderSizePixel = 0,
+										Position = newUDim2(0, 1, 0, 1),
+										Size = newUDim2(1, -2, 1, -2),
+										ZIndex = 105
+									})
+									
+									-- handler (внутренний фон с градиентом)
+									local keybindHandler = utility:create("Frame", {
+										Name = "Handler",
+										Parent = keybindInline,
+										BackgroundColor3 = library.Theme["Element"],
+										BorderSizePixel = 0,
+										Position = newUDim2(0, 1, 0, 1),
+										Size = newUDim2(1, -2, 1, -2),
+										ZIndex = 105
+									})
+									
+									utility:create("UIGradient", {
+										Parent = keybindHandler,
+										Rotation = 90,
+										Color = newColorSequence({
+											newColorSequenceKeypoint(0, library.Theme["Element"]),
+											newColorSequenceKeypoint(1, library.Theme["Background"])
+										})
+									})
+									
+									-- текст клавиши
+									local keybindText = utility:create("TextLabel", {
+										Name = "KeybindText",
+										Parent = keybindHandler,
+										BackgroundTransparency = 1,
+										Size = newUDim2(1, 0, 1, 0),
+										Position = newUDim2(0, 0, 0, -1),
+										FontFace = library.Font,
+										Text = "NONE",
+										TextColor3 = library.Theme["Text"],
+										TextSize = 12,
+										TextXAlignment = Enum.TextXAlignment.Center,
+										ZIndex = 106
+									})
+									
+									utility:create("UIStroke", {
+										Parent = keybindText,
+										Color = library.Theme["Text Border"],
+										Thickness = 1
+									})
+									
+									-- создаем окно настроек keybind (открывается по ПКМ)
+									local keybindWindow = utility:create("Frame", {
+										Name = "KeybindWindow",
+										Parent = toggle.section.window.screenGui,
+										BackgroundColor3 = library.Theme["Outline"],
+										BorderSizePixel = 0,
+										Position = newUDim2(0, 0, 0, 0),
+										Size = newUDim2(0, 60, 0, 0),
+										AutomaticSize = Enum.AutomaticSize.Y,
+										Visible = false,
+										ZIndex = 250
+									})
+									
+									utility:create("UIStroke", {
+										Parent = keybindWindow,
+										ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+										Color = library.Theme["Outline"],
+										Thickness = 1
+									})
+									
+									local kbWindowInline = utility:create("Frame", {
+										Parent = keybindWindow,
+										BackgroundColor3 = library.Theme["Border"],
+										BorderSizePixel = 0,
+										Position = newUDim2(0, 1, 0, 1),
+										Size = newUDim2(1, -2, 1, -2),
+										AutomaticSize = Enum.AutomaticSize.Y,
+										ZIndex = 250
+									})
+									
+									local kbWindowInlineInline = utility:create("Frame", {
+										Parent = kbWindowInline,
+										BackgroundColor3 = library.Theme["Outline"],
+										BorderSizePixel = 0,
+										Position = newUDim2(0, 1, 0, 1),
+										Size = newUDim2(1, -2, 1, -2),
+										AutomaticSize = Enum.AutomaticSize.Y,
+										ZIndex = 250
+									})
+									
+									local kbWindowBackground = utility:create("Frame", {
+										Parent = kbWindowInlineInline,
+										BackgroundColor3 = library.Theme["Background"],
+										BorderSizePixel = 0,
+										Position = newUDim2(0, 1, 0, 1),
+										Size = newUDim2(1, -2, 1, -2),
+										AutomaticSize = Enum.AutomaticSize.Y,
+										ZIndex = 250
+									})
+									
+									utility:create("UIGradient", {
+										Parent = kbWindowBackground,
+										Rotation = 90,
+										Color = newColorSequence({
+											newColorSequenceKeypoint(0, library.Theme["Element"]),
+											newColorSequenceKeypoint(1, library.Theme["Background"])
+										})
+									})
+									
+									-- контейнер для элементов
+									local kbElementsContainer = utility:create("Frame", {
+										Parent = kbWindowBackground,
+										BackgroundTransparency = 1,
+										Size = newUDim2(1, 0, 1, 0),
+										AutomaticSize = Enum.AutomaticSize.Y,
+										ZIndex = 251
+									})
+									
+									utility:create("UIListLayout", {
+										Parent = kbElementsContainer,
+										Padding = newUDim(0, 2),
+										SortOrder = Enum.SortOrder.LayoutOrder
+									})
+									
+									utility:create("UIPadding", {
+										Parent = kbElementsContainer,
+										PaddingTop = newUDim(0, 4),
+										PaddingBottom = newUDim(0, 4),
+										PaddingLeft = newUDim(0, 4),
+										PaddingRight = newUDim(0, 4)
+									})
+									
+									-- дропдаун режимов (Toggle, Hold, Always)
+									local modeOptions = {"Toggle", "Hold", "Always"}
+									local modeButtons = {}
+									
+									for _, modeName in ipairs(modeOptions) do
+										local modeButton = utility:create("TextButton", {
+											Name = "ModeOption",
+											Parent = kbElementsContainer,
+											BackgroundTransparency = 1,
+											Size = newUDim2(1, 0, 0, 14),
+											AutoButtonColor = false,
+											Text = "",
+											ZIndex = 252
+										})
+										
+										local modeText = utility:create("TextLabel", {
+											Name = "ModeText",
+											Parent = modeButton,
+											BackgroundTransparency = 1,
+											Size = newUDim2(1, 0, 1, 0),
+											FontFace = library.Font,
+											Text = string.lower(modeName),
+											TextColor3 = library.Theme["Text"],
+											TextTransparency = keybind.mode == modeName and 0 or 0.48,
+											TextSize = 12,
+											TextXAlignment = Enum.TextXAlignment.Center,
+											ZIndex = 253
+										})
+										
+										utility:create("UIStroke", {
+											Parent = modeText,
+											Color = library.Theme["Text Border"],
+											Thickness = 1
+										})
+										
+										if keybind.mode == modeName then
+											modeText.TextColor3 = library.Theme["Accent"]
+										end
+										
+										modeButtons[modeName] = {
+											button = modeButton,
+											text = modeText
+										}
+										
+										-- клик по режиму
+										library.connections[#library.connections + 1] = modeButton.MouseButton1Click:Connect(function()
+											-- сбрасываем все режимы
+											for name, data in pairs(modeButtons) do
+												utility:tween(data.text, {
+													TextColor3 = library.Theme["Text"],
+													TextTransparency = 0.48
+												}, 0.2)
+											end
+											
+											-- активируем выбранный
+											utility:tween(modeText, {
+												TextColor3 = library.Theme["Accent"],
+												TextTransparency = 0
+											}, 0.2)
+											
+											keybind.mode = modeName
+											
+											-- для Always режима сразу активируем
+											if modeName == "Always" then
+												keybind:Set(true)
+											end
+											
+											library.flags[keybind.flag].Mode = modeName
+										end)
+									end
+									
+									-- ПКМ - открытие окна настроек
+									library.connections[#library.connections + 1] = keybindButton.MouseButton2Click:Connect(function()
+										keybind.settingsOpen = not keybind.settingsOpen
+										
+										if keybind.settingsOpen then
+											local buttonPos = keybindButton.AbsolutePosition
+											keybindWindow.Position = newUDim2(0, buttonPos.X, 0, buttonPos.Y + 20)
+											keybindWindow.Visible = true
+										else
+											keybindWindow.Visible = false
+										end
+									end)
+									
+									-- закрытие окна при клике вне его
+									library.connections[#library.connections + 1] = uis.InputBegan:Connect(function(input)
+										if input.UserInputType == Enum.UserInputType.MouseButton1 then
+											if keybind.settingsOpen and keybindWindow.Visible then
+												local mousePos = uis:GetMouseLocation() - guiService:GetGuiInset()
+												local windowPos = keybindWindow.AbsolutePosition
+												local windowSize = keybindWindow.AbsoluteSize
+												
+												local isOutside = mousePos.X < windowPos.X or mousePos.X > windowPos.X + windowSize.X or
+																 mousePos.Y < windowPos.Y or mousePos.Y > windowPos.Y + windowSize.Y
+												
+												if isOutside then
+													keybind.settingsOpen = false
+													keybindWindow.Visible = false
+												end
+											end
+										end
+									end)
+									
+									-- сохраняем ссылки
+									keybind.window = keybindWindow
+									keybind.settingsOpen = false
+									
+									-- функция обновления текста кнопки
+									function keybind:UpdateText()
+										if keybind.key then
+											local keyName = tostring(keybind.key):gsub("Enum.KeyCode.", ""):gsub("Enum.UserInputType.", "")
+											-- делаем короткие названия для часто используемых клавиш
+											if keyName == "LeftShift" then keyName = "LS"
+											elseif keyName == "RightShift" then keyName = "RS"
+											elseif keyName == "LeftControl" then keyName = "LC"
+											elseif keyName == "RightControl" then keyName = "RC"
+											elseif keyName == "LeftAlt" then keyName = "LA"
+											elseif keyName == "RightAlt" then keyName = "RA"
+											elseif keyName == "MouseButton1" then keyName = "M1"
+											elseif keyName == "MouseButton2" then keyName = "M2"
+											elseif keyName == "MouseButton3" then keyName = "M3"
+											end
+											keybindText.Text = string.lower(keyName)
+										else
+											keybindText.Text = "---"
+										end
+									end
+									
+									-- функция установки клавиши
+									function keybind:Set(input)
+										if type(input) == "boolean" then
+											keybind.active = input
+											keybind.callback(keybind.active)
+										elseif typeof(input) == "EnumItem" then
+											if input.Name == "Escape" then
+												keybind.key = nil
+											else
+												keybind.key = input
+											end
+											keybind:UpdateText()
+										elseif type(input) == "table" then
+											if input.Key then
+												keybind.key = input.Key
+											end
+											if input.Mode then
+												keybind.mode = input.Mode
+											end
+											if input.Active ~= nil then
+												keybind.active = input.Active
+											end
+											keybind:UpdateText()
+										end
+										
+										library.flags[keybind.flag] = {
+											Key = keybind.key,
+											Mode = keybind.mode,
+											Active = keybind.active
+										}
+									end
+									
+									-- ЛКМ - привязка клавиши
+									library.connections[#library.connections + 1] = keybindButton.MouseButton1Click:Connect(function()
+										if keybind.binding then return end
+										
+										keybind.binding = true
+										keybindText.Text = "..."
+										
+										local connection
+										connection = uis.InputBegan:Connect(function(input, gameProcessed)
+											task.wait()
+											
+											local keyCode = input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode or input.UserInputType
+											keybind:Set(keyCode)
+											
+											keybind.binding = false
+											connection:Disconnect()
+										end)
+									end)
+									
+									-- обработчик нажатий клавиш
+									library.connections[#library.connections + 1] = uis.InputBegan:Connect(function(input, gameProcessed)
+										if gameProcessed or keybind.binding then return end
+										
+										local keyCode = input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode or input.UserInputType
+										
+										if keyCode == keybind.key then
+											if keybind.mode == "Toggle" then
+												keybind.active = not keybind.active
+												keybind:Set(keybind.active)
+											elseif keybind.mode == "Hold" then
+												keybind:Set(true)
+											elseif keybind.mode == "Always" then
+												keybind:Set(true)
+											end
+										end
+									end)
+									
+									-- обработчик отпускания клавиш (для Hold режима)
+									library.connections[#library.connections + 1] = uis.InputEnded:Connect(function(input, gameProcessed)
+										if gameProcessed then return end
+										
+										local keyCode = input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode or input.UserInputType
+										
+										if keyCode == keybind.key and keybind.mode == "Hold" then
+											keybind:Set(false)
+										end
+									end)
+									
+									-- set default
+									if keybind.default then
+										keybind:Set(keybind.default)
+									end
+									
+									-- сохраняем ссылки
+									toggle.keybind = keybind
+									keybind.button = keybindButton
+									keybind.text = keybindText
+									
+									return keybind
 								end
 								
 								return toggle
@@ -2925,10 +3543,32 @@ function library:CreateWindow(properties)
 							ZIndex = 104
 						})
 						
+						-- right holder для colorpicker/keybind элементов
+						local rightHolder = utility:create("Frame", {
+							Name = "RightHolder",
+							Parent = toggleButton,
+							BackgroundTransparency = 1,
+							AnchorPoint = newVector2(1, 0.5),
+							Position = newUDim2(1, -2, 0.5, 0),
+							Size = newUDim2(0, 0, 0, 12),
+							ZIndex = 104
+						})
+						
+						utility:create("UIListLayout", {
+							Parent = rightHolder,
+							FillDirection = Enum.FillDirection.Horizontal,
+							HorizontalAlignment = Enum.HorizontalAlignment.Right,
+							VerticalAlignment = Enum.VerticalAlignment.Center,
+							Padding = newUDim(0, 4),
+							SortOrder = Enum.SortOrder.LayoutOrder
+						})
+						
 						-- index
 						toggle.button = toggleButton
 						toggle.indicator = indicator
 						toggle.text = toggleText
+						toggle.holder = toggleButton
+						toggle.rightHolder = rightHolder
 					end
 					
 					do -- // Toggle Functions
@@ -2983,25 +3623,21 @@ function library:CreateWindow(properties)
 						color = fromRGB(255, 255, 255)
 					}
 					
-					local colorButton
+					local colorButton, colorButtonFrame
 					
 					do -- // Colorpicker UI
-						-- кнопка colorpicker (справа от toggle)
+						-- outline (внешняя рамка)
 						colorButton = utility:create("TextButton", {
 							Name = "ColorButton",
-							Parent = toggle.button,
-							BackgroundColor3 = colorpicker.default,
-							BorderColor3 = fromRGB(0, 0, 0),
+							Parent = toggle.rightHolder,
+							BackgroundColor3 = library.Theme["Outline"],
 							BorderSizePixel = 0,
-							AnchorPoint = newVector2(1, 0.5),
-							Position = newUDim2(1, -2, 0.5, 0),
 							Size = newUDim2(0, 12, 0, 10),
 							AutoButtonColor = false,
 							Text = "",
 							ZIndex = 105
 						})
 						
-						-- outline для кнопки
 						utility:create("UIStroke", {
 							Parent = colorButton,
 							ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
@@ -3010,17 +3646,51 @@ function library:CreateWindow(properties)
 							LineJoinMode = Enum.LineJoinMode.Miter
 						})
 						
-						-- gradient для кнопки
-						utility:create("UIGradient", {
+						-- inline (средняя рамка)
+						local colorInline = utility:create("Frame", {
+							Name = "Inline",
 							Parent = colorButton,
-							Rotation = 90,
-							Color = newColorSequence({
-								newColorSequenceKeypoint(0, fromRGB(255, 255, 255)),
-								newColorSequenceKeypoint(1, fromRGB(127, 127, 127))
-							})
+							BackgroundColor3 = library.Theme["Border"],
+							BorderSizePixel = 0,
+							Position = newUDim2(0, 1, 0, 1),
+							Size = newUDim2(1, -2, 1, -2),
+							ZIndex = 105
+						})
+						
+						-- handler (внутренний контейнер)
+						local colorHandler = utility:create("Frame", {
+							Name = "Handler",
+							Parent = colorInline,
+							BackgroundColor3 = fromRGB(255, 255, 255),
+							BorderSizePixel = 0,
+							Position = newUDim2(0, 1, 0, 1),
+							Size = newUDim2(1, -2, 1, -2),
+							ZIndex = 105
+						})
+						
+						-- клеточки для показа прозрачности
+						utility:create("ImageLabel", {
+							Parent = colorHandler,
+							Image = "rbxassetid://18274452449",
+							ScaleType = Enum.ScaleType.Tile,
+							TileSize = newUDim2(0, 4, 0, 4),
+							BackgroundTransparency = 1,
+							Size = newUDim2(1, 0, 1, 0),
+							ZIndex = 105
+						})
+						
+						-- цветной слой поверх клеточек
+						colorButtonFrame = utility:create("Frame", {
+							Parent = colorHandler,
+							BackgroundColor3 = colorpicker.default,
+							BackgroundTransparency = 1 - colorpicker.alpha,
+							BorderSizePixel = 0,
+							Size = newUDim2(1, 0, 1, 0),
+							ZIndex = 106
 						})
 						
 						colorpicker.button = colorButton
+						colorpicker.colorFrame = colorButtonFrame
 					end
 					
 					do -- // Colorpicker Functions
@@ -3028,8 +3698,11 @@ function library:CreateWindow(properties)
 							colorpicker.color = color or fromRGB(255, 255, 255)
 							colorpicker.alpha = alpha or 1
 							
-							-- обновляем цвет кнопки
-							utility:tween(colorpicker.button, {BackgroundColor3 = colorpicker.color}, 0.2)
+							-- обновляем цвет и прозрачность
+							utility:tween(colorpicker.colorFrame, {
+								BackgroundColor3 = colorpicker.color,
+								BackgroundTransparency = 1 - colorpicker.alpha
+							}, 0.2)
 							
 							-- сохраняем в флаги
 							library.flags[colorpicker.flag] = {
@@ -3691,6 +4364,127 @@ do
 		Alpha = 1,
 		Callback = function(color, alpha)
 			print("Box Color:", color, "Alpha:", alpha)
+		end
+	})
+	
+	-- добавляем keybind к toggle
+	boxToggle:AddKeybind({
+		Name = "Box ESP Toggle",
+		Flag = "BoxESP_Keybind",
+		Key = Enum.KeyCode.B,
+		Mode = "Toggle",
+		Callback = function(active)
+			print("Box ESP Keybind Active:", active)
+		end
+	})
+	
+	-- пример: несколько colorpicker на одном toggle
+	local multiColorToggle = boxSection:AddToggle({
+		Name = "Multi Colors",
+		Flag = "MultiColors_Enabled",
+		Default = false,
+		Callback = function(value)
+			print("Multi Colors:", value)
+		end
+	})
+	
+	multiColorToggle:AddColorpicker({
+		Name = "Color 1",
+		Flag = "MultiColor_1",
+		Default = fromRGB(255, 0, 0),
+		Alpha = 1,
+		Callback = function(color, alpha)
+			print("Color 1:", color)
+		end
+	})
+	
+	multiColorToggle:AddColorpicker({
+		Name = "Color 2",
+		Flag = "MultiColor_2",
+		Default = fromRGB(0, 255, 0),
+		Alpha = 1,
+		Callback = function(color, alpha)
+			print("Color 2:", color)
+		end
+	})
+	
+	multiColorToggle:AddColorpicker({
+		Name = "Color 3",
+		Flag = "MultiColor_3",
+		Default = fromRGB(0, 0, 255),
+		Alpha = 1,
+		Callback = function(color, alpha)
+			print("Color 3:", color)
+		end
+	})
+	
+	-- пример: несколько keybind на одном toggle
+	local multiKeybindToggle = boxSection:AddToggle({
+		Name = "Multi Keybinds",
+		Flag = "MultiKeybinds_Enabled",
+		Default = false,
+		Callback = function(value)
+			print("Multi Keybinds:", value)
+		end
+	})
+	
+	multiKeybindToggle:AddKeybind({
+		Name = "Keybind 1",
+		Flag = "MultiKeybind_1",
+		Key = Enum.KeyCode.F,
+		Mode = "Toggle",
+		Callback = function(active)
+			print("Keybind 1 Active:", active)
+		end
+	})
+	
+	multiKeybindToggle:AddKeybind({
+		Name = "Keybind 2",
+		Flag = "MultiKeybind_2",
+		Key = Enum.KeyCode.G,
+		Mode = "Hold",
+		Callback = function(active)
+			print("Keybind 2 Active:", active)
+		end
+	})
+	
+	-- пример: смешанные элементы (colorpicker + keybind)
+	local mixedToggle = healthSection:AddToggle({
+		Name = "Health Bar",
+		Flag = "HealthBar_Enabled",
+		Default = true,
+		Callback = function(value)
+			print("Health Bar:", value)
+		end
+	})
+	
+	mixedToggle:AddColorpicker({
+		Name = "Health Color",
+		Flag = "HealthBar_Color",
+		Default = fromRGB(0, 255, 0),
+		Alpha = 0.8,
+		Callback = function(color, alpha)
+			print("Health Color:", color, "Alpha:", alpha)
+		end
+	})
+	
+	mixedToggle:AddKeybind({
+		Name = "Toggle Health Bar",
+		Flag = "HealthBar_Keybind",
+		Key = Enum.KeyCode.H,
+		Mode = "Toggle",
+		Callback = function(active)
+			print("Health Bar Keybind:", active)
+		end
+	})
+	
+	mixedToggle:AddColorpicker({
+		Name = "Background Color",
+		Flag = "HealthBar_BgColor",
+		Default = fromRGB(50, 50, 50),
+		Alpha = 0.5,
+		Callback = function(color, alpha)
+			print("Background Color:", color)
 		end
 	})
 	
