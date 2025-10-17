@@ -33,6 +33,7 @@ local library = {
 	connections = {},
 	flags = {},
 	activeSlider = nil,
+	ScreenGui = nil,
 	
 	Theme = {
 		["Background"] = fromRGB(20, 15, 15),
@@ -167,6 +168,11 @@ function library:CreateWindow(properties)
 			Parent = coregui,
 			ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 		})
+		
+		-- сохраняем ScreenGui в library
+		if not library.ScreenGui then
+			library.ScreenGui = screenGui
+		end
 		
 		window.screenGui = screenGui
 		
@@ -3246,6 +3252,111 @@ function library:CreateWindow(properties)
 								return label
 							end
 							
+							-- AddButton для секции
+							function section:AddButton(properties)
+								properties = properties or {}
+								
+								local button = {
+									name = properties.Name or properties.Text or "Button",
+									callback = properties.Callback or function() end,
+									section = section
+								}
+								
+								local buttonOutline, buttonText
+								
+								do -- // Button UI
+									-- button frame (как у dropdown)
+									buttonOutline = utility:create("TextButton", {
+										Name = "Button",
+										Parent = section.container,
+										BackgroundColor3 = library.Theme["Background"],
+										BorderColor3 = library.Theme["Border"],
+										BorderSizePixel = 2,
+										Size = newUDim2(1, 0, 0, 17),
+										AutoButtonColor = false,
+										Text = "",
+										ZIndex = 104
+									})
+									
+									-- gradient
+									utility:create("UIGradient", {
+										Parent = buttonOutline,
+										Rotation = 90,
+										Color = newColorSequence({
+											newColorSequenceKeypoint(0, fromRGB(255, 255, 255)),
+											newColorSequenceKeypoint(1, fromRGB(100, 100, 100))
+										})
+									})
+									
+									-- outline stroke
+									utility:create("UIStroke", {
+										Parent = buttonOutline,
+										ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+										Color = library.Theme["Outline"],
+										Thickness = 1,
+										LineJoinMode = Enum.LineJoinMode.Miter
+									})
+									
+									-- text
+									buttonText = utility:create("TextLabel", {
+										Name = "Text",
+										Parent = buttonOutline,
+										BackgroundTransparency = 1,
+										Size = newUDim2(1, 0, 1, 0),
+										FontFace = library.Font,
+										Text = button.name,
+										TextColor3 = library.Theme["Text"],
+										TextSize = 12,
+										TextTruncate = Enum.TextTruncate.AtEnd,
+										TextXAlignment = Enum.TextXAlignment.Center,
+										ZIndex = 105
+									})
+									
+									utility:create("UIStroke", {
+										Parent = buttonText,
+										Color = library.Theme["Text Border"],
+										Thickness = 1,
+										LineJoinMode = Enum.LineJoinMode.Miter
+									})
+									
+									button.frame = buttonOutline
+									button.textLabel = buttonText
+								end
+								
+								do -- // Button Functions
+									function button:SetText(text)
+										button.name = text
+										buttonText.Text = text
+									end
+									
+									function button:GetText()
+										return button.name
+									end
+									
+									function button:Fire()
+										button.callback()
+									end
+								end
+								
+								do -- // Button Interactions
+									-- click
+									library.connections[#library.connections + 1] = buttonOutline.MouseButton1Click:Connect(function()
+										button:Fire()
+									end)
+									
+									-- hover effect
+									library.connections[#library.connections + 1] = buttonOutline.MouseEnter:Connect(function()
+										utility:tween(buttonOutline, {BackgroundColor3 = library.Theme["Hovered Element"]}, 0.2)
+									end)
+									
+									library.connections[#library.connections + 1] = buttonOutline.MouseLeave:Connect(function()
+										utility:tween(buttonOutline, {BackgroundColor3 = library.Theme["Background"]}, 0.2)
+									end)
+								end
+								
+								return button
+							end
+							
 							-- AddDropdown для секции
 							function section:AddDropdown(properties)
 								properties = properties or {}
@@ -4422,6 +4533,111 @@ function library:CreateWindow(properties)
 				return label
 			end
 			
+			-- AddButton для секции (таб без подвкладок)
+			function section:AddButton(properties)
+				properties = properties or {}
+				
+				local button = {
+					name = properties.Name or properties.Text or "Button",
+					callback = properties.Callback or function() end,
+					section = section
+				}
+				
+				local buttonOutline, buttonText
+				
+				do -- // Button UI
+					-- button frame (как у dropdown)
+					buttonOutline = utility:create("TextButton", {
+						Name = "Button",
+						Parent = section.container,
+						BackgroundColor3 = library.Theme["Background"],
+						BorderColor3 = library.Theme["Border"],
+						BorderSizePixel = 2,
+						Size = newUDim2(1, 0, 0, 17),
+						AutoButtonColor = false,
+						Text = "",
+						ZIndex = 104
+					})
+					
+					-- gradient
+					utility:create("UIGradient", {
+						Parent = buttonOutline,
+						Rotation = 90,
+						Color = newColorSequence({
+							newColorSequenceKeypoint(0, fromRGB(255, 255, 255)),
+							newColorSequenceKeypoint(1, fromRGB(100, 100, 100))
+						})
+					})
+					
+					-- outline stroke
+					utility:create("UIStroke", {
+						Parent = buttonOutline,
+						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+						Color = library.Theme["Outline"],
+						Thickness = 1,
+						LineJoinMode = Enum.LineJoinMode.Miter
+					})
+					
+					-- text
+					buttonText = utility:create("TextLabel", {
+						Name = "Text",
+						Parent = buttonOutline,
+						BackgroundTransparency = 1,
+						Size = newUDim2(1, 0, 1, 0),
+						FontFace = library.Font,
+						Text = button.name,
+						TextColor3 = library.Theme["Text"],
+						TextSize = 12,
+						TextTruncate = Enum.TextTruncate.AtEnd,
+						TextXAlignment = Enum.TextXAlignment.Center,
+						ZIndex = 105
+					})
+					
+					utility:create("UIStroke", {
+						Parent = buttonText,
+						Color = library.Theme["Text Border"],
+						Thickness = 1,
+						LineJoinMode = Enum.LineJoinMode.Miter
+					})
+					
+					button.frame = buttonOutline
+					button.textLabel = buttonText
+				end
+				
+				do -- // Button Functions
+					function button:SetText(text)
+						button.name = text
+						buttonText.Text = text
+					end
+					
+					function button:GetText()
+						return button.name
+					end
+					
+					function button:Fire()
+						button.callback()
+					end
+				end
+				
+				do -- // Button Interactions
+					-- click
+					library.connections[#library.connections + 1] = buttonOutline.MouseButton1Click:Connect(function()
+						button:Fire()
+					end)
+					
+					-- hover effect
+					library.connections[#library.connections + 1] = buttonOutline.MouseEnter:Connect(function()
+						utility:tween(buttonOutline, {BackgroundColor3 = library.Theme["Hovered Element"]}, 0.2)
+					end)
+					
+					library.connections[#library.connections + 1] = buttonOutline.MouseLeave:Connect(function()
+						utility:tween(buttonOutline, {BackgroundColor3 = library.Theme["Background"]}, 0.2)
+					end)
+				end
+				
+				return button
+			end
+			
 			-- AddDropdown для секции (таб без подвкладок)
 			function section:AddDropdown(properties)
 				properties = properties or {}
@@ -4758,6 +4974,20 @@ function library:CreateWindow(properties)
 	 end
 	end
 	
+	-- функции видимости окна
+	function window:SetVisible(visible)
+		window.visible = visible
+		mainFrame.Visible = visible
+	end
+	
+	function window:GetVisible()
+		return window.visible
+	end
+	
+	function window:Toggle()
+		window:SetVisible(not window.visible)
+	end
+	
 	library.windows[#library.windows + 1] = window
 	
 	-- глобальные обработчики для слайдеров (создаются один раз, оптимизированы)
@@ -4785,6 +5015,7 @@ function library:CreateWindow(properties)
 	
 	return setmetatable(window, library)
 end
+
 
 -- // Example Usage
 do
