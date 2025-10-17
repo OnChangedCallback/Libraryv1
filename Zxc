@@ -3468,50 +3468,50 @@ function library:CreateWindow(properties)
 									})
 									
 									-- dropdown icon (+/-)
-									dropdownIcon = utility:create("TextLabel", {
-										Name = "Icon",
-										Parent = dropdownButton,
-										BackgroundTransparency = 1,
-										BorderColor3 = fromRGB(0, 0, 0),
-										BorderSizePixel = 0,
-										Position = newUDim2(0, -4, 0, -1),
-										Size = newUDim2(1, 0, 1, 0),
-										FontFace = library.Font,
-										Text = "+",
-										TextColor3 = library.Theme["Text"],
-										TextSize = 12,
-										TextXAlignment = Enum.TextXAlignment.Right,
-										ZIndex = 105
-									})
-									
-									utility:create("UIStroke", {
-										Parent = dropdownIcon,
-										Color = library.Theme["Text Border"],
-										Thickness = 1,
-										LineJoinMode = Enum.LineJoinMode.Miter
-									})
-									
-									-- option holder
-									optionHolder = utility:create("Frame", {
-										Name = "OptionHolder",
-										Parent = dropdownFrame,
-										BackgroundColor3 = library.Theme["Inline"],
-										BorderColor3 = library.Theme["Border"],
-										BorderSizePixel = 2,
-										Position = newUDim2(0, 0, 1, 5),
-										Size = newUDim2(1, 0, 0, 0),
-										AutomaticSize = Enum.AutomaticSize.Y,
-										Visible = false,
-										ZIndex = 115
-									})
-									
-									utility:create("UIStroke", {
-										Parent = optionHolder,
-										ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-										Color = library.Theme["Outline"],
-										Thickness = 1,
-										LineJoinMode = Enum.LineJoinMode.Miter
-									})
+								dropdownIcon = utility:create("TextLabel", {
+									Name = "Icon",
+									Parent = dropdownButton,
+									BackgroundTransparency = 1,
+									BorderColor3 = fromRGB(0, 0, 0),
+									BorderSizePixel = 0,
+									Position = newUDim2(0, -4, 0, -1),
+									Size = newUDim2(1, 0, 1, 0),
+									FontFace = library.Font,
+									Text = "+",
+									TextColor3 = library.Theme["Text"],
+									TextSize = 12,
+									TextXAlignment = Enum.TextXAlignment.Right,
+									ZIndex = 105
+								})
+								
+								utility:create("UIStroke", {
+									Parent = dropdownIcon,
+									Color = library.Theme["Text Border"],
+									Thickness = 1,
+									LineJoinMode = Enum.LineJoinMode.Miter
+								})
+								
+								-- option holder (создаём в ScreenGui для правильного отображения поверх всех элементов)
+								optionHolder = utility:create("Frame", {
+									Name = "OptionHolder",
+									Parent = library.ScreenGui,
+									BackgroundColor3 = library.Theme["Inline"],
+									BorderColor3 = library.Theme["Border"],
+									BorderSizePixel = 2,
+									Position = newUDim2(0, dropdownButton.AbsolutePosition.X, 0, dropdownButton.AbsolutePosition.Y + dropdownButton.AbsoluteSize.Y + 5),
+									Size = newUDim2(0, dropdownButton.AbsoluteSize.X, 0, 0),
+									AutomaticSize = Enum.AutomaticSize.Y,
+									Visible = false,
+									ZIndex = 1000
+								})
+								
+								utility:create("UIStroke", {
+									Parent = optionHolder,
+									ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+									Color = library.Theme["Outline"],
+									Thickness = 1,
+									LineJoinMode = Enum.LineJoinMode.Miter
+								})
 									
 									utility:create("UIListLayout", {
 										Parent = optionHolder,
@@ -3543,7 +3543,7 @@ function library:CreateWindow(properties)
 											Size = newUDim2(1, 0, 0, 15),
 											AutoButtonColor = false,
 											Text = "",
-											ZIndex = 116
+											ZIndex = 1001
 										})
 										
 										local optionText = utility:create("TextLabel", {
@@ -3560,7 +3560,7 @@ function library:CreateWindow(properties)
 											TextTransparency = 0.48,
 											TextSize = 12,
 											TextXAlignment = Enum.TextXAlignment.Left,
-											ZIndex = 117
+											ZIndex = 1002
 										})
 										
 										utility:create("UIStroke", {
@@ -3624,6 +3624,13 @@ function library:CreateWindow(properties)
 									
 									function dropdown:SetOpen(state)
 										dropdown.isOpen = state
+										
+										if state then
+											-- обновляем позицию optionHolder при открытии
+											dropdown.holder.Position = newUDim2(0, dropdownButton.AbsolutePosition.X, 0, dropdownButton.AbsolutePosition.Y + dropdownButton.AbsoluteSize.Y + 5)
+											dropdown.holder.Size = newUDim2(0, dropdownButton.AbsoluteSize.X, 0, dropdown.holder.Size.Y.Offset)
+										end
+										
 										dropdown.holder.Visible = state
 										dropdown.icon.Text = state and "-" or "+"
 										dropdown.icon.Position = state and newUDim2(0, -5, 0, -1) or newUDim2(0, -4, 0, -1)
@@ -4765,17 +4772,18 @@ function library:CreateWindow(properties)
 						LineJoinMode = Enum.LineJoinMode.Miter
 					})
 					
+					-- option holder (создаём в ScreenGui для правильного отображения поверх всех элементов)
 					optionHolder = utility:create("Frame", {
 						Name = "OptionHolder",
-						Parent = dropdownFrame,
+						Parent = library.ScreenGui,
 						BackgroundColor3 = library.Theme["Inline"],
 						BorderColor3 = library.Theme["Border"],
 						BorderSizePixel = 2,
-						Position = newUDim2(0, 0, 1, 5),
-						Size = newUDim2(1, 0, 0, 0),
+						Position = newUDim2(0, dropdownButton.AbsolutePosition.X, 0, dropdownButton.AbsolutePosition.Y + dropdownButton.AbsoluteSize.Y + 5),
+						Size = newUDim2(0, dropdownButton.AbsoluteSize.X, 0, 0),
 						AutomaticSize = Enum.AutomaticSize.Y,
 						Visible = false,
-						ZIndex = 115
+						ZIndex = 1000
 					})
 					
 					utility:create("UIStroke", {
@@ -4815,7 +4823,7 @@ function library:CreateWindow(properties)
 							Size = newUDim2(1, 0, 0, 15),
 							AutoButtonColor = false,
 							Text = "",
-							ZIndex = 116
+							ZIndex = 1001
 						})
 						
 						local optionText = utility:create("TextLabel", {
@@ -4832,7 +4840,7 @@ function library:CreateWindow(properties)
 							TextTransparency = 0.48,
 							TextSize = 12,
 							TextXAlignment = Enum.TextXAlignment.Left,
-							ZIndex = 117
+							ZIndex = 1002
 						})
 						
 						utility:create("UIStroke", {
@@ -4894,6 +4902,13 @@ function library:CreateWindow(properties)
 					
 					function dropdown:SetOpen(state)
 						dropdown.isOpen = state
+						
+						if state then
+							-- обновляем позицию optionHolder при открытии
+							dropdown.holder.Position = newUDim2(0, dropdownButton.AbsolutePosition.X, 0, dropdownButton.AbsolutePosition.Y + dropdownButton.AbsoluteSize.Y + 5)
+							dropdown.holder.Size = newUDim2(0, dropdownButton.AbsoluteSize.X, 0, dropdown.holder.Size.Y.Offset)
+						end
+						
 						dropdown.holder.Visible = state
 						dropdown.icon.Text = state and "-" or "+"
 						dropdown.icon.Position = state and newUDim2(0, -5, 0, -1) or newUDim2(0, -4, 0, -1)
@@ -5238,6 +5253,61 @@ do
 		Default = "Bar",
 		Callback = function(value)
 			print("Health Style:", value)
+		end
+	})
+	
+	-- элементы ниже dropdown для проверки ZIndex
+	healthSection:AddSlider({
+		Name = "Bar Width",
+		Flag = "HealthBar_Width",
+		Min = 1,
+		Max = 10,
+		Default = 3,
+		Decimals = 1,
+		Suffix = "px",
+		Callback = function(value)
+			print("Bar Width:", value)
+		end
+	})
+	
+	healthSection:AddToggle({
+		Name = "Show Percentage",
+		Flag = "HealthBar_ShowPercentage",
+		Default = true,
+		Callback = function(value)
+			print("Show Percentage:", value)
+		end
+	})
+	
+	chamsSection:AddToggle({
+		Name = "Enabled",
+		Flag = "Chams_Enabled",
+		Default = false,
+		Callback = function(value)
+			print("Chams:", value)
+		end
+	})
+	
+	chamsSection:AddDropdown({
+		Name = "Material",
+		Flag = "Chams_Material",
+		Items = {"ForceField", "Neon", "Glass", "Plastic"},
+		Default = "ForceField",
+		Callback = function(value)
+			print("Chams Material:", value)
+		end
+	})
+	
+	chamsSection:AddSlider({
+		Name = "Transparency",
+		Flag = "Chams_Transparency",
+		Min = 0,
+		Max = 1,
+		Default = 0.5,
+		Decimals = 0.01,
+		Suffix = "",
+		Callback = function(value)
+			print("Chams Transparency:", value)
 		end
 	})
 	
